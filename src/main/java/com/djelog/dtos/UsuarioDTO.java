@@ -1,31 +1,16 @@
-package com.djelog.entities;
+package com.djelog.dtos;
 
-import jakarta.persistence.*;
+import com.djelog.entities.Cargo;
+
 import java.util.UUID;
 
-@Entity
-@Table(name = "usuario")
-public class Usuario {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+public class UsuarioDTO {
+    
     private UUID id;
-
-    @Column(nullable = false)
     private String nome;
-
-    @Column(unique = true, nullable = false)
     private String email;
-
-    @Column(nullable = false)
     private String senha;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_cargo", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_usuario_cargo"))
     private Cargo cargo;
-
-    public Usuario() {
-    }
 
     public UUID getId() {
         return id;
