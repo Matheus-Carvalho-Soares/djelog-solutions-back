@@ -57,11 +57,23 @@ public class UsuarioController {
             );
 
             UserDetails userDetails = userDetailsService.loadUserByUsername(request.getEmail());
+            String email = userDetails.getUsername();
+            Usuario usuario = usuarioService.findByEmail(email);
             String token = jwtService.generateToken(userDetails);
-            return ResponseEntity.ok(new LoginResponse(true, token, "Usuário autenticado com sucesso."));
+            return ResponseEntity.ok(new LoginResponse(true, token, "Usuário autenticado com sucesso.", usuario.getEmail(), usuario.getNome(), usuario.getId())); // Add userId here
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new LoginResponse(false, null, e.getMessage()));
+                    .body(new LoginResponse(false, null, "Email e/ou senha inválidas.", null, null, null));
+        }
+    }
+    @PutMapping("/usuario/{id}")
+    public ResponseEntity<Usuario> atualizarUsuario(@PathVariable("id") UUID id, @RequestBody UsuarioDTO usuarioDTO) {
+        try {
+            Usuario usuarioAtualizado = usuarioService.atualizarUsuario(id, usuarioDTO);
+            Usuario userResponse = usuarioService.usuarioDtoToResponse(usuarioAtualizado);
+            return ResponseEntity.ok(userResponse);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 }

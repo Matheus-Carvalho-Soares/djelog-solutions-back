@@ -56,5 +56,30 @@ public class UsuarioService {
     public Usuario buscarPorId(UUID id) {
         return findById(id);
     }
+
+    public Usuario atualizarUsuario(UUID id, UsuarioDTO usuarioDTO) {
+        Usuario usuario = findById(id);
+
+        if (usuarioDTO.getNome() != null) {
+            usuario.setNome(usuarioDTO.getNome());
+        }
+
+        if (usuarioDTO.getEmail() != null && !usuarioDTO.getEmail().equals(usuario.getEmail())) {
+            if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
+                throw new RuntimeException("Email já cadastrado");
+            }
+            usuario.setEmail(usuarioDTO.getEmail());
+        }
+
+        if (usuarioDTO.getSenha() != null && !usuarioDTO.getSenha().isBlank()) {
+            usuario.setSenha(passwordEncoder.encode(usuarioDTO.getSenha()));
+        }
+
+        if (usuarioDTO.getCargo() != null) {
+            usuario.setCargo(usuarioDTO.getCargo());
+        }
+
+        return usuarioRepository.save(usuario);
+    }
 }
 
