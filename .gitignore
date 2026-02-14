@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Spring Boot ###
+application.properties
+application-*.properties
+
+### Security ###
+**/JwtService.java
