@@ -15,10 +15,10 @@ import java.util.Map;
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret:secretkey}")
+    @Value("${jwt.secret}")
     private String secret;
 
-    @Value("${jwt.expiration-ms:3600000}") // 1h
+    @Value("${jwt.expiration-ms}")
     private long expirationMs;
 
     private Key getSignKey() {
