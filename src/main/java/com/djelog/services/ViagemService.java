@@ -32,7 +32,7 @@ public class ViagemService {
     }
     private ViagemRelatorioDTO toRelatorioDto(Viagem v) {
         // calcula e sobrescreve o valor de comissão na entidade
-        BigDecimal comissaoCalculada = v.getValorFrete().multiply(new BigDecimal("0.10"));
+        BigDecimal comissaoCalculada = v.getValorFrete().multiply(v.getComissao());
         v.setComissao(comissaoCalculada);
 
         // busca as despesas relacionadas à viagem
