@@ -2,6 +2,7 @@ package com.djelog.entities;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
@@ -17,7 +18,14 @@ public class Veiculo {
 
     private Integer ano;
 
+    @Column(name = "placa", nullable = false, length = 10)
     private String placa;
+
+    @Column(name = "nome")
+    private String nome;
+
+    @Column(name = "qtdPeso", precision = 10, scale = 2)
+    private BigDecimal qtdPeso;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_profissional", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_veiculo_profissional"))
@@ -74,5 +82,21 @@ public class Veiculo {
 
     public void setPlaca(String placa) {
         this.placa = placa;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public BigDecimal getQtdPeso() {
+        return qtdPeso;
+    }
+
+    public void setQtdPeso(BigDecimal qtdPeso) {
+        this.qtdPeso = qtdPeso;
     }
 }

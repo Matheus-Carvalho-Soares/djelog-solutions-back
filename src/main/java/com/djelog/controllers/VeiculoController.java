@@ -93,6 +93,8 @@ public class VeiculoController {
                     existing.setAno(veiculo.getAno());
                     existing.setProfissional(veiculo.getProfissional());
                     existing.setPlaca(veiculo.getPlaca());
+                    existing.setNome(veiculo.getNome());
+                    existing.setQtdPeso(veiculo.getQtdPeso());
                     existing.setStatus(veiculo.getStatus());
                     Veiculo saved = veiculoRepository.save(existing);
                     return ResponseEntity.ok(convertToDTO(saved));
@@ -115,6 +117,8 @@ public class VeiculoController {
         dto.setMarca(veiculo.getMarca());
         dto.setAno(veiculo.getAno());
         dto.setPlaca(veiculo.getPlaca());
+        dto.setNome(veiculo.getNome());
+        dto.setQtdPeso(veiculo.getQtdPeso());
         dto.setStatus(veiculo.getStatus());
         
         if (veiculo.getProfissional() != null) {

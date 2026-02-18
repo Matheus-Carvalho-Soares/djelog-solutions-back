@@ -6,6 +6,9 @@ public class EmpresaDTO {
     private UUID id;
     private String nome;
     private String descricao;
+    private String nomeContato;
+    private String telefoneContato;
+    private String emailContato;
 
     public EmpresaDTO() {
     }
@@ -32,5 +35,29 @@ public class EmpresaDTO {
 
     public void setDescricao(String descricao) {
         this.descricao = descricao;
+    }
+
+    public String getNomeContato() {
+        return nomeContato;
+    }
+
+    public void setNomeContato(String nomeContato) {
+        this.nomeContato = nomeContato;
+    }
+
+    public String getTelefoneContato() {
+        return telefoneContato;
+    }
+
+    public void setTelefoneContato(String telefoneContato) {
+        this.telefoneContato = telefoneContato;
+    }
+
+    public String getEmailContato() {
+        return emailContato;
+    }
+
+    public void setEmailContato(String emailContato) {
+        this.emailContato = emailContato;
     }
 }

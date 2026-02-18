@@ -76,6 +76,9 @@ public class EmpresaController {
                 .map(existing -> {
                     existing.setNome(empresa.getNome());
                     existing.setDescricao(empresa.getDescricao());
+                    existing.setNomeContato(empresa.getNomeContato());
+                    existing.setTelefoneContato(empresa.getTelefoneContato());
+                    existing.setEmailContato(empresa.getEmailContato());
                     existing.setUsuario(usuarioService.findById(usuarioId));
                     Empresa saved = empresaRepository.save(existing);
                     return ResponseEntity.ok(convertToDTO(saved));
@@ -97,6 +100,9 @@ public class EmpresaController {
         dto.setId(empresa.getId());
         dto.setNome(empresa.getNome());
         dto.setDescricao(empresa.getDescricao());
+        dto.setNomeContato(empresa.getNomeContato());
+        dto.setTelefoneContato(empresa.getTelefoneContato());
+        dto.setEmailContato(empresa.getEmailContato());
         return dto;
     }
 }

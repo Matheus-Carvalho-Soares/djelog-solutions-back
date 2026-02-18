@@ -2,16 +2,18 @@ package com.djelog.dtos;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class ViagemRelatorioDTO {
     private LocalDateTime dataInicio;
     private LocalDateTime dataFim;
     private String status;
-    private String localizacaoFrete;
+    private String inicioFrete;
+    private String fimFrete;
     private BigDecimal valorFrete;
     private BigDecimal comissao;
-    private BigDecimal abastecimento;
-    private BigDecimal despesas;
+    private List<DespesaDTO> despesas;
+    private BigDecimal totalDespesas;
     private String profissionalNome;
     private String empresaNome;
     private String veiculoMarca;
@@ -22,11 +24,11 @@ public class ViagemRelatorioDTO {
             LocalDateTime dataInicio,
             LocalDateTime dataFim,
             String status,
-            String localizacaoFrete,
+            String inicioFrete,
+            String fimFrete,
             BigDecimal valorFrete,
             BigDecimal comissao,
-            BigDecimal abastecimento,
-            BigDecimal despesas,
+            List<DespesaDTO> despesas,
             String profissionalNome,
             String empresaNome,
             String veiculoMarca,
@@ -35,11 +37,12 @@ public class ViagemRelatorioDTO {
         this.dataInicio = dataInicio;
         this.dataFim = dataFim;
         this.status = status;
-        this.localizacaoFrete = localizacaoFrete;
+        this.inicioFrete = inicioFrete;
+        this.fimFrete = fimFrete;
         this.valorFrete = valorFrete;
         this.comissao = comissao;
-        this.abastecimento = abastecimento;
         this.despesas = despesas;
+        this.totalDespesas = calcularTotalDespesas(despesas);
         this.profissionalNome = profissionalNome;
         this.empresaNome = empresaNome;
         this.veiculoMarca = veiculoMarca;
@@ -70,12 +73,20 @@ public class ViagemRelatorioDTO {
         this.status = status;
     }
 
-    public String getLocalizacaoFrete() {
-        return localizacaoFrete;
+    public String getInicioFrete() {
+        return inicioFrete;
     }
 
-    public void setLocalizacaoFrete(String localizacaoFrete) {
-        this.localizacaoFrete = localizacaoFrete;
+    public void setInicioFrete(String inicioFrete) {
+        this.inicioFrete = inicioFrete;
+    }
+
+    public String getFimFrete() {
+        return fimFrete;
+    }
+
+    public void setFimFrete(String fimFrete) {
+        this.fimFrete = fimFrete;
     }
 
     public BigDecimal getValorFrete() {
@@ -94,20 +105,31 @@ public class ViagemRelatorioDTO {
         this.comissao = comissao;
     }
 
-    public BigDecimal getAbastecimento() {
-        return abastecimento;
-    }
-
-    public void setAbastecimento(BigDecimal abastecimento) {
-        this.abastecimento = abastecimento;
-    }
-
-    public BigDecimal getDespesas() {
+    public List<DespesaDTO> getDespesas() {
         return despesas;
     }
 
-    public void setDespesas(BigDecimal despesas) {
+    public void setDespesas(List<DespesaDTO> despesas) {
         this.despesas = despesas;
+        this.totalDespesas = calcularTotalDespesas(despesas);
+    }
+
+    public BigDecimal getTotalDespesas() {
+        return totalDespesas;
+    }
+
+    public void setTotalDespesas(BigDecimal totalDespesas) {
+        this.totalDespesas = totalDespesas;
+    }
+
+    private BigDecimal calcularTotalDespesas(List<DespesaDTO> despesas) {
+        if (despesas == null || despesas.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        return despesas.stream()
+                .map(DespesaDTO::getValor)
+                .map(BigDecimal::valueOf)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public String getProfissionalNome() {

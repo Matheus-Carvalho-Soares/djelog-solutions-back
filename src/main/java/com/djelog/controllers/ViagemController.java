@@ -168,11 +168,10 @@ public class ViagemController {
                     existing.setProfissional(viagem.getProfissional());
                     existing.setEmpresa(viagem.getEmpresa());
                     existing.setVeiculo(viagem.getVeiculo());
-                    existing.setLocalizacaoFrete(viagem.getLocalizacaoFrete());
+                    existing.setInicioFrete(viagem.getInicioFrete());
+                    existing.setFimFrete(viagem.getFimFrete());
                     existing.setValorFrete(viagem.getValorFrete());
                     existing.setComissao(viagem.getComissao());
-                    existing.setAbastecimento(viagem.getAbastecimento());
-                    existing.setDespesas(viagem.getDespesas());
                     existing.setDataInicio(viagem.getDataInicio());
                     existing.setDataFim(viagem.getDataFim());
                     existing.setStatus(viagem.getStatus());
@@ -194,11 +193,10 @@ public class ViagemController {
     private ViagemDTO convertToDTO(Viagem viagem) {
         ViagemDTO dto = new ViagemDTO();
         dto.setId(viagem.getId());
-        dto.setLocalizacaoFrete(viagem.getLocalizacaoFrete());
+        dto.setInicioFrete(viagem.getInicioFrete());
+        dto.setFimFrete(viagem.getFimFrete());
         dto.setValorFrete(viagem.getValorFrete());
         dto.setComissao(viagem.getComissao());
-        dto.setAbastecimento(viagem.getAbastecimento());
-        dto.setDespesas(viagem.getDespesas());
         dto.setDataInicio(viagem.getDataInicio());
         dto.setDataFim(viagem.getDataFim());
         dto.setStatus(viagem.getStatus());
@@ -217,6 +215,9 @@ public class ViagemController {
             empresaDTO.setId(viagem.getEmpresa().getId());
             empresaDTO.setNome(viagem.getEmpresa().getNome());
             empresaDTO.setDescricao(viagem.getEmpresa().getDescricao());
+            empresaDTO.setNomeContato(viagem.getEmpresa().getNomeContato());
+            empresaDTO.setTelefoneContato(viagem.getEmpresa().getTelefoneContato());
+            empresaDTO.setEmailContato(viagem.getEmpresa().getEmailContato());
             dto.setEmpresa(empresaDTO);
         }
         
@@ -226,6 +227,8 @@ public class ViagemController {
             veiculoDTO.setMarca(viagem.getVeiculo().getMarca());
             veiculoDTO.setAno(viagem.getVeiculo().getAno());
             veiculoDTO.setPlaca(viagem.getVeiculo().getPlaca());
+            veiculoDTO.setNome(viagem.getVeiculo().getNome());
+            veiculoDTO.setQtdPeso(viagem.getVeiculo().getQtdPeso());
             veiculoDTO.setStatus(viagem.getVeiculo().getStatus());
             dto.setVeiculo(veiculoDTO);
         }

@@ -9,11 +9,10 @@ public class ViagemDTO {
     private ProfissionalDTO profissional;
     private EmpresaDTO empresa;
     private VeiculoDTO veiculo;
-    private String localizacaoFrete;
+    private String inicioFrete;
+    private String fimFrete;
     private BigDecimal valorFrete;
     private BigDecimal comissao;
-    private BigDecimal abastecimento;
-    private BigDecimal despesas;
     private LocalDateTime dataInicio;
     private LocalDateTime dataFim;
     private String status;
@@ -53,12 +52,20 @@ public class ViagemDTO {
         this.veiculo = veiculo;
     }
 
-    public String getLocalizacaoFrete() {
-        return localizacaoFrete;
+    public String getInicioFrete() {
+        return inicioFrete;
     }
 
-    public void setLocalizacaoFrete(String localizacaoFrete) {
-        this.localizacaoFrete = localizacaoFrete;
+    public void setInicioFrete(String inicioFrete) {
+        this.inicioFrete = inicioFrete;
+    }
+
+    public String getFimFrete() {
+        return fimFrete;
+    }
+
+    public void setFimFrete(String fimFrete) {
+        this.fimFrete = fimFrete;
     }
 
     public BigDecimal getValorFrete() {
@@ -77,21 +84,6 @@ public class ViagemDTO {
         this.comissao = comissao;
     }
 
-    public BigDecimal getAbastecimento() {
-        return abastecimento;
-    }
-
-    public void setAbastecimento(BigDecimal abastecimento) {
-        this.abastecimento = abastecimento;
-    }
-
-    public BigDecimal getDespesas() {
-        return despesas;
-    }
-
-    public void setDespesas(BigDecimal despesas) {
-        this.despesas = despesas;
-    }
 
     public LocalDateTime getDataInicio() {
         return dataInicio;

@@ -1,5 +1,6 @@
 package com.djelog.dtos;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 public class VeiculoDTO {
@@ -7,6 +8,8 @@ public class VeiculoDTO {
     private String marca;
     private Integer ano;
     private String placa;
+    private String nome;
+    private BigDecimal qtdPeso;
     private ProfissionalDTO profissional;
     private Boolean status;
 
@@ -43,6 +46,22 @@ public class VeiculoDTO {
 
     public void setPlaca(String placa) {
         this.placa = placa;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public BigDecimal getQtdPeso() {
+        return qtdPeso;
+    }
+
+    public void setQtdPeso(BigDecimal qtdPeso) {
+        this.qtdPeso = qtdPeso;
     }
 
     public ProfissionalDTO getProfissional() {

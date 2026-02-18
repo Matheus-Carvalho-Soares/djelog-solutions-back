@@ -26,8 +26,11 @@ public class Viagem {
     @JoinColumn(name = "id_veiculo", referencedColumnName = "id", nullable = false, foreignKey = @ForeignKey(name = "fk_viagem_veiculo"))
     private Veiculo veiculo;
 
-    @Column(name = "localizacao_frete", nullable = false)
-    private String localizacaoFrete;
+    @Column(name = "inicio_frete", nullable = false)
+    private String inicioFrete;
+
+    @Column(name = "fim_frete")
+    private String fimFrete;
 
     @Column(name = "valor_frete", nullable = false, precision = 10, scale = 2)
     private BigDecimal valorFrete;
@@ -35,11 +38,6 @@ public class Viagem {
     @Column(precision = 10, scale = 2)
     private BigDecimal comissao;
 
-    @Column(precision = 10, scale = 2)
-    private BigDecimal abastecimento;
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal despesas;
 
     @Column(name = "data_inicio", nullable = false)
     private LocalDateTime dataInicio;
@@ -77,12 +75,20 @@ public class Viagem {
         this.empresa = empresa;
     }
 
-    public String getLocalizacaoFrete() {
-        return localizacaoFrete;
+    public String getInicioFrete() {
+        return inicioFrete;
     }
 
-    public void setLocalizacaoFrete(String localizacaoFrete) {
-        this.localizacaoFrete = localizacaoFrete;
+    public void setInicioFrete(String inicioFrete) {
+        this.inicioFrete = inicioFrete;
+    }
+
+    public String getFimFrete() {
+        return fimFrete;
+    }
+
+    public void setFimFrete(String fimFrete) {
+        this.fimFrete = fimFrete;
     }
 
     public BigDecimal getValorFrete() {
@@ -101,21 +107,6 @@ public class Viagem {
         this.comissao = comissao;
     }
 
-    public BigDecimal getAbastecimento() {
-        return abastecimento;
-    }
-
-    public void setAbastecimento(BigDecimal abastecimento) {
-        this.abastecimento = abastecimento;
-    }
-
-    public BigDecimal getDespesas() {
-        return despesas;
-    }
-
-    public void setDespesas(BigDecimal despesas) {
-        this.despesas = despesas;
-    }
 
     public LocalDateTime getDataInicio() {
         return dataInicio;

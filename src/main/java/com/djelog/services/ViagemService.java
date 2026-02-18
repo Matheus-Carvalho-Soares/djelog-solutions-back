@@ -1,8 +1,11 @@
 package com.djelog.services;
 
 import com.djelog.dtos.ViagemRelatorioDTO;
+import com.djelog.dtos.DespesaDTO;
 import com.djelog.entities.Viagem;
 import com.djelog.repositories.ViagemRepository;
+import com.djelog.repositories.DespesaRepository;
+import com.djelog.services.DespesaService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -14,9 +17,13 @@ import java.util.UUID;
 public class ViagemService {
 
     private final ViagemRepository viagemRepository;
+    private final DespesaRepository despesaRepository;
+    private final DespesaService despesaService;
 
-    public ViagemService(ViagemRepository viagemRepository) {
+    public ViagemService(ViagemRepository viagemRepository, DespesaRepository despesaRepository, DespesaService despesaService) {
         this.viagemRepository = viagemRepository;
+        this.despesaRepository = despesaRepository;
+        this.despesaService = despesaService;
     }
 
     public List<ViagemRelatorioDTO> findDadosByDataInicioFim(UUID usuarioId, LocalDateTime dataInicio, LocalDateTime dataFim) {
@@ -28,16 +35,28 @@ public class ViagemService {
         BigDecimal comissaoCalculada = v.getValorFrete().multiply(new BigDecimal("0.10"));
         v.setComissao(comissaoCalculada);
 
+        // busca as despesas relacionadas à viagem
+        List<DespesaDTO> despesas = despesaRepository.findByViagemIdWithViagem(v.getId()).stream()
+                .map(despesa -> {
+                    DespesaDTO dto = new DespesaDTO();
+                    dto.setId(despesa.getId());
+                    dto.setNome(despesa.getNome());
+                    dto.setDescricao(despesa.getDescricao());
+                    dto.setValor(despesa.getValor());
+                    return dto;
+                })
+                .toList();
+
         // usa o novo valor para o DTO
         ViagemRelatorioDTO dto = new ViagemRelatorioDTO(
                 v.getDataInicio(),
                 v.getDataFim(),
                 v.getStatus(),
-                v.getLocalizacaoFrete(),
+                v.getInicioFrete(),
+                v.getFimFrete(),
                 v.getValorFrete(),
-                comissaoCalculada, // valor calculado
-                v.getAbastecimento(),
-                v.getDespesas(),
+                comissaoCalculada,
+                despesas,
                 v.getProfissional() != null ? v.getProfissional().getNome() : null,
                 v.getEmpresa() != null ? v.getEmpresa().getNome() : null,
                 v.getVeiculo() != null ? v.getVeiculo().getMarca() : null,
@@ -46,10 +65,9 @@ public class ViagemService {
 
         BigDecimal valorFrete = defaultZero(v.getValorFrete());
         BigDecimal comissao = defaultZero(comissaoCalculada);
-        BigDecimal abastecimento = defaultZero(v.getAbastecimento());
-        BigDecimal despesas = defaultZero(v.getDespesas());
+        BigDecimal totalDespesas = defaultZero(dto.getTotalDespesas());
 
-        dto.setLucroLiquido(valorFrete.subtract(comissao.add(abastecimento).add(despesas)));
+        dto.setLucroLiquido(valorFrete.subtract(comissao.add(totalDespesas)));
 
         return dto;
     }
