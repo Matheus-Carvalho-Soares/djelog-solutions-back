@@ -6,7 +6,6 @@
 		<groupId>com.djelog</groupId>
 		<artifactId>djelog</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
-		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<groupId>com.djelog</groupId>
 	<artifactId>back</artifactId>
@@ -85,9 +84,10 @@
 
 	<build>
 		<plugins>
-			<plugin>
+<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.11.0</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
