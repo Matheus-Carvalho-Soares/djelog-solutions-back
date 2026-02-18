@@ -8,8 +8,17 @@ public class ViagemComissionadaDTO {
     private String fimFrete;
     private Integer valor;
     private Integer comissao;
+    private String descricao;
 
     public ViagemComissionadaDTO() {
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
     }
 
     public UUID getId() {

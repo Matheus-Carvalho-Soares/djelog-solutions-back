@@ -91,5 +91,6 @@ public class ViagemComissionadaService {
         entity.setFimFrete(dto.getFimFrete());
         entity.setValor(dto.getValor());
         entity.setComissao(dto.getComissao());
+        entity.setDescricao(dto.getDescricao());
     }
 }

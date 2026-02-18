@@ -24,6 +24,9 @@ public class ViagemComissionada {
     @Column
     private Integer comissao;
 
+    @Column
+    private String descricao;
+
     public ViagemComissionada() {
     }
 
@@ -65,5 +68,13 @@ public class ViagemComissionada {
 
     public void setComissao(Integer comissao) {
         this.comissao = comissao;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
     }
 }
