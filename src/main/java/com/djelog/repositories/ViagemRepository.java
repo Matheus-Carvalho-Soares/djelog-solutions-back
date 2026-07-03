@@ -8,11 +8,14 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface ViagemRepository extends JpaRepository<Viagem, UUID> {
     List<Viagem> findByProfissional_Usuario_Id(UUID usuarioId);
+    Optional<Viagem> findByIdAndProfissional_Usuario_Id(UUID id, UUID usuarioId);
+    boolean existsByIdAndProfissional_Usuario_Id(UUID id, UUID usuarioId);
 
     @Query("""
             select v

@@ -10,8 +10,10 @@ import com.djelog.repositories.ViagemRepository;
 import com.djelog.repositories.EmpresaRepository;
 import com.djelog.repositories.ProfissionalRepository;
 import com.djelog.repositories.VeiculoRepository;
+import com.djelog.services.CurrentUserService;
 import com.djelog.services.UsuarioService;
 import com.djelog.services.ViagemService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -20,11 +22,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/viagem")
-@CrossOrigin(origins = "*")
 public class ViagemController {
 
     private final ViagemRepository viagemRepository;
@@ -33,34 +35,21 @@ public class ViagemController {
     private final EmpresaRepository empresaRepository;
     private final ProfissionalRepository profissionalRepository;
     private final VeiculoRepository veiculoRepository;
+    private final CurrentUserService currentUserService;
 
-    public ViagemController(ViagemRepository viagemRepository, UsuarioService usuarioService, ViagemService viagemService, EmpresaRepository empresaRepository, ProfissionalRepository profissionalRepository, VeiculoRepository veiculoRepository) {
+    public ViagemController(ViagemRepository viagemRepository, UsuarioService usuarioService, ViagemService viagemService, EmpresaRepository empresaRepository, ProfissionalRepository profissionalRepository, VeiculoRepository veiculoRepository, CurrentUserService currentUserService) {
         this.viagemRepository = viagemRepository;
         this.usuarioService = usuarioService;
         this.viagemService = viagemService;
         this.empresaRepository = empresaRepository;
         this.profissionalRepository = profissionalRepository;
         this.veiculoRepository = veiculoRepository;
-    }
-
-    private UUID getAuthenticatedUserId(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
-        }
-        String email = authentication.getName();
-        if (email == null || email.isBlank()) {
-            return null;
-        }
-        return usuarioService.findByEmail(email).getId();
+        this.currentUserService = currentUserService;
     }
 
     @GetMapping("/findAll")
-    public ResponseEntity<List<ViagemDTO>> findAll(Authentication authentication) {
-        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        String email = authentication.getName();
-        UUID usuarioId = usuarioService.findByEmail(email).getId();
+    public ResponseEntity<List<ViagemDTO>> findAll() {
+        UUID usuarioId = currentUserService.getCurrentUserId();
         List<Viagem> viagens = viagemRepository.findByProfissional_Usuario_Id(usuarioId);
         List<ViagemDTO> viagensDTO = viagens.stream().map(this::convertToDTO).toList();
         return viagensDTO.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(viagensDTO);
@@ -68,22 +57,16 @@ public class ViagemController {
 
     @GetMapping("/excel/dados")
     public ResponseEntity<List<ViagemRelatorioDTO>> findDadosByDataInicioFim(
-            Authentication authentication,
             @RequestParam("dataInicio") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
             @RequestParam("dataFim") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim
     ) {
-        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
         if (dataInicio == null || dataFim == null) {
             return ResponseEntity.badRequest().build();
         }
         if (dataInicio.isAfter(dataFim)) {
             return ResponseEntity.badRequest().build();
         }
-
-        String email = authentication.getName();
-        UUID usuarioId = usuarioService.findByEmail(email).getId();
+        UUID usuarioId = currentUserService.getCurrentUserId();
 
         List<ViagemRelatorioDTO> dados = viagemService.findDadosByDataInicioFim(usuarioId, dataInicio, dataFim);
         return dados.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(dados);
@@ -91,18 +74,16 @@ public class ViagemController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ViagemDTO> findById(@PathVariable("id") UUID id) {
-        return viagemRepository.findById(id)
+        UUID usuarioId = currentUserService.getCurrentUserId();
+        return viagemRepository.findByIdAndProfissional_Usuario_Id(id, usuarioId)
                 .map(this::convertToDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<ViagemDTO> create(@RequestBody Viagem viagem, Authentication authentication) {
-        UUID usuarioId = getAuthenticatedUserId(authentication);
-        if (usuarioId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    public ResponseEntity<ViagemDTO> create(@Valid @RequestBody Viagem viagem) {
+        UUID usuarioId = currentUserService.getCurrentUserId();
         
         // Validate that empresa belongs to the authenticated user
         if (viagem.getEmpresa() == null || viagem.getEmpresa().getId() == null) {
@@ -133,11 +114,8 @@ public class ViagemController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ViagemDTO> update(@PathVariable("id") UUID id, @RequestBody Viagem viagem, Authentication authentication) {
-        UUID usuarioId = getAuthenticatedUserId(authentication);
-        if (usuarioId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    public ResponseEntity<ViagemDTO> update(@PathVariable("id") UUID id, @Valid @RequestBody Viagem viagem) {
+        UUID usuarioId = currentUserService.getCurrentUserId();
         
         // Validate that empresa belongs to the authenticated user
         if (viagem.getEmpresa() == null || viagem.getEmpresa().getId() == null) {
@@ -163,7 +141,7 @@ public class ViagemController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         
-        return viagemRepository.findById(id)
+        return viagemRepository.findByIdAndProfissional_Usuario_Id(id, usuarioId)
                 .map(existing -> {
                     existing.setProfissional(viagem.getProfissional());
                     existing.setEmpresa(viagem.getEmpresa());
@@ -183,10 +161,10 @@ public class ViagemController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable("id") UUID id) {
-        if (!viagemRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        viagemRepository.deleteById(id);
+        UUID usuarioId = currentUserService.getCurrentUserId();
+        Viagem viagem = viagemRepository.findByIdAndProfissional_Usuario_Id(id, usuarioId)
+                .orElseThrow(NoSuchElementException::new);
+        viagemRepository.delete(viagem);
         return ResponseEntity.noContent().build();
     }
 

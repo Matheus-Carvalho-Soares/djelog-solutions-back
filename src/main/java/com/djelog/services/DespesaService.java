@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -25,42 +26,42 @@ public class DespesaService {
         this.viagemRepository = viagemRepository;
     }
 
-    public List<DespesaDTO> findAll() {
-        return despesaRepository.findAll().stream()
+    public List<DespesaDTO> findAll(UUID usuarioId) {
+        return despesaRepository.findByUsuarioId(usuarioId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 
-    public DespesaDTO findById(UUID id) {
-        Despesa despesa = despesaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Despesa não encontrada"));
+    public DespesaDTO findById(UUID id, UUID usuarioId) {
+        Despesa despesa = despesaRepository.findByIdAndUsuarioId(id, usuarioId)
+                .orElseThrow(NoSuchElementException::new);
         return toDTO(despesa);
     }
 
-    public List<DespesaDTO> findByViagemId(UUID viagemId) {
-        return despesaRepository.findByViagemIdWithViagem(viagemId).stream()
+    public List<DespesaDTO> findByViagemId(UUID viagemId, UUID usuarioId) {
+        return despesaRepository.findByViagemIdAndUsuarioId(viagemId, usuarioId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
 
-    public DespesaDTO create(DespesaDTO despesaDTO) {
-        Despesa despesa = toEntity(despesaDTO);
+    public DespesaDTO create(DespesaDTO despesaDTO, UUID usuarioId) {
+        Despesa despesa = toEntity(despesaDTO, usuarioId);
         Despesa savedDespesa = despesaRepository.save(despesa);
         return toDTO(savedDespesa);
     }
 
-    public DespesaDTO update(UUID id, DespesaDTO despesaDTO) {
-        Despesa existingDespesa = despesaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Despesa não encontrada"));
+    public DespesaDTO update(UUID id, DespesaDTO despesaDTO, UUID usuarioId) {
+        Despesa existingDespesa = despesaRepository.findByIdAndUsuarioId(id, usuarioId)
+                .orElseThrow(NoSuchElementException::new);
 
-        updateEntityFromDTO(existingDespesa, despesaDTO);
+        updateEntityFromDTO(existingDespesa, despesaDTO, usuarioId);
         Despesa updatedDespesa = despesaRepository.save(existingDespesa);
         return toDTO(updatedDespesa);
     }
 
-    public void delete(UUID id) {
-        if (!despesaRepository.existsById(id)) {
-            throw new RuntimeException("Despesa não encontrada");
+    public void delete(UUID id, UUID usuarioId) {
+        if (!despesaRepository.existsByIdAndUsuarioId(id, usuarioId)) {
+            throw new NoSuchElementException();
         }
         despesaRepository.deleteById(id);
     }
@@ -71,7 +72,7 @@ public class DespesaService {
         dto.setNome(despesa.getNome());
         dto.setDescricao(despesa.getDescricao());
         dto.setValor(despesa.getValor());
-        
+
         if (despesa.getViagem() != null) {
             ViagemDTO viagemDTO = new ViagemDTO();
             viagemDTO.setId(despesa.getViagem().getId());
@@ -79,35 +80,38 @@ public class DespesaService {
             viagemDTO.setFimFrete(despesa.getViagem().getFimFrete());
             dto.setViagem(viagemDTO);
         }
-        
+
         return dto;
     }
 
-    private Despesa toEntity(DespesaDTO dto) {
+    private Despesa toEntity(DespesaDTO dto, UUID usuarioId) {
         Despesa despesa = new Despesa();
-        despesa.setId(dto.getId());
         despesa.setNome(dto.getNome());
         despesa.setDescricao(dto.getDescricao());
         despesa.setValor(dto.getValor());
-        
-        if (dto.getViagem() != null && dto.getViagem().getId() != null) {
-            Viagem viagem = viagemRepository.findById(dto.getViagem().getId())
-                    .orElseThrow(() -> new RuntimeException("Viagem não encontrada"));
-            despesa.setViagem(viagem);
+
+        if (dto.getViagem() == null || dto.getViagem().getId() == null) {
+            throw new IllegalArgumentException("Viagem obrigatória");
         }
-        
+
+        Viagem viagem = viagemRepository.findByIdAndProfissional_Usuario_Id(dto.getViagem().getId(), usuarioId)
+                .orElseThrow(NoSuchElementException::new);
+        despesa.setViagem(viagem);
+
         return despesa;
     }
 
-    private void updateEntityFromDTO(Despesa despesa, DespesaDTO dto) {
+    private void updateEntityFromDTO(Despesa despesa, DespesaDTO dto, UUID usuarioId) {
         despesa.setNome(dto.getNome());
         despesa.setDescricao(dto.getDescricao());
         despesa.setValor(dto.getValor());
-        
-        if (dto.getViagem() != null && dto.getViagem().getId() != null) {
-            Viagem viagem = viagemRepository.findById(dto.getViagem().getId())
-                    .orElseThrow(() -> new RuntimeException("Viagem não encontrada"));
-            despesa.setViagem(viagem);
+
+        if (dto.getViagem() == null || dto.getViagem().getId() == null) {
+            throw new IllegalArgumentException("Viagem obrigatória");
         }
+
+        Viagem viagem = viagemRepository.findByIdAndProfissional_Usuario_Id(dto.getViagem().getId(), usuarioId)
+                .orElseThrow(NoSuchElementException::new);
+        despesa.setViagem(viagem);
     }
 }

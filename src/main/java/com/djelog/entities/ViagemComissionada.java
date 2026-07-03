@@ -1,6 +1,10 @@
 package com.djelog.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
@@ -13,19 +17,31 @@ public class ViagemComissionada {
     private UUID id;
 
     @Column(name = "inicio_frete", length = 100)
+    @NotBlank
+    @Size(max = 100)
     private String inicioFrete;
 
     @Column(name = "fim_frete", length = 100)
+    @Size(max = 100)
     private String fimFrete;
 
     @Column
+    @NotNull
+    @Min(0)
     private Integer valor;
 
     @Column
+    @NotNull
+    @Min(0)
     private Integer comissao;
 
     @Column
+    @Size(max = 2000)
     private String descricao;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_viagem_comissionada_usuario"))
+    private Usuario usuario;
 
     public ViagemComissionada() {
     }
@@ -76,5 +92,13 @@ public class ViagemComissionada {
 
     public void setDescricao(String descricao) {
         this.descricao = descricao;
+    }
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
     }
 }

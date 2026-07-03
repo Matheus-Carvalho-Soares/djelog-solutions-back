@@ -5,47 +5,37 @@ import com.djelog.dtos.ProfissionalDTO;
 import com.djelog.entities.Veiculo;
 import com.djelog.repositories.ProfissionalRepository;
 import com.djelog.repositories.VeiculoRepository;
+import com.djelog.services.CurrentUserService;
 import com.djelog.services.UsuarioService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/veiculo")
-@CrossOrigin(origins = "*")
 public class VeiculoController {
 
     private final VeiculoRepository veiculoRepository;
     private final UsuarioService usuarioService;
     private final ProfissionalRepository profissionalRepository;
+    private final CurrentUserService currentUserService;
 
-    public VeiculoController(VeiculoRepository veiculoRepository, UsuarioService usuarioService, ProfissionalRepository profissionalRepository) {
+    public VeiculoController(VeiculoRepository veiculoRepository, UsuarioService usuarioService, ProfissionalRepository profissionalRepository, CurrentUserService currentUserService) {
         this.veiculoRepository = veiculoRepository;
         this.usuarioService = usuarioService;
         this.profissionalRepository = profissionalRepository;
-    }
-
-    private UUID getAuthenticatedUserId(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
-        }
-        String email = authentication.getName();
-        if (email == null || email.isBlank()) {
-            return null;
-        }
-        return usuarioService.findByEmail(email).getId();
+        this.currentUserService = currentUserService;
     }
 
     @GetMapping("/findAll")
-    public ResponseEntity<List<VeiculoDTO>> findAll(Authentication authentication) {
-        UUID usuarioId = getAuthenticatedUserId(authentication);
-        if (usuarioId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    public ResponseEntity<List<VeiculoDTO>> findAll() {
+        UUID usuarioId = currentUserService.getCurrentUserId();
         List<Veiculo> veiculos = veiculoRepository.findByProfissional_Usuario_Id(usuarioId);
         List<VeiculoDTO> veiculosDTO = veiculos.stream().map(this::convertToDTO).toList();
         return veiculosDTO.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(veiculosDTO);
@@ -53,18 +43,16 @@ public class VeiculoController {
 
     @GetMapping("/{id}")
     public ResponseEntity<VeiculoDTO> findById(@PathVariable("id") UUID id) {
-        return veiculoRepository.findById(id)
+        UUID usuarioId = currentUserService.getCurrentUserId();
+        return veiculoRepository.findByIdAndProfissional_Usuario_Id(id, usuarioId)
                 .map(this::convertToDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<VeiculoDTO> create(@RequestBody Veiculo veiculo, Authentication authentication) {
-        UUID usuarioId = getAuthenticatedUserId(authentication);
-        if (usuarioId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    public ResponseEntity<VeiculoDTO> create(@Valid @RequestBody Veiculo veiculo) {
+        UUID usuarioId = currentUserService.getCurrentUserId();
         if (veiculo.getProfissional() == null || veiculo.getProfissional().getId() == null) {
             return ResponseEntity.badRequest().build();
         }
@@ -76,18 +64,15 @@ public class VeiculoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<VeiculoDTO> update(@PathVariable("id") UUID id, @RequestBody Veiculo veiculo, Authentication authentication) {
-        UUID usuarioId = getAuthenticatedUserId(authentication);
-        if (usuarioId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    public ResponseEntity<VeiculoDTO> update(@PathVariable("id") UUID id, @Valid @RequestBody Veiculo veiculo) {
+        UUID usuarioId = currentUserService.getCurrentUserId();
         if (veiculo.getProfissional() == null || veiculo.getProfissional().getId() == null) {
             return ResponseEntity.badRequest().build();
         }
         if (!profissionalRepository.existsByIdAndUsuario_Id(veiculo.getProfissional().getId(), usuarioId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return veiculoRepository.findById(id)
+        return veiculoRepository.findByIdAndProfissional_Usuario_Id(id, usuarioId)
                 .map(existing -> {
                     existing.setMarca(veiculo.getMarca());
                     existing.setAno(veiculo.getAno());
@@ -104,10 +89,10 @@ public class VeiculoController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable("id") UUID id) {
-        if (!veiculoRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        veiculoRepository.deleteById(id);
+        UUID usuarioId = currentUserService.getCurrentUserId();
+        Veiculo veiculo = veiculoRepository.findByIdAndProfissional_Usuario_Id(id, usuarioId)
+                .orElseThrow(NoSuchElementException::new);
+        veiculoRepository.delete(veiculo);
         return ResponseEntity.noContent().build();
     }
 

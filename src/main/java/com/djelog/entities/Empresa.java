@@ -1,6 +1,9 @@
 package com.djelog.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
@@ -13,18 +16,26 @@ public class Empresa {
     private UUID id;
 
     @Column(nullable = false)
+    @NotBlank
+    @Size(max = 120)
     private String nome;
 
     @Column(columnDefinition = "TEXT")
+    @Size(max = 2000)
     private String descricao;
 
     @Column(name = "nome_contato", nullable = false, length = 100)
+    @NotBlank
+    @Size(max = 100)
     private String nomeContato;
 
     @Column(name = "telefone_contato", length = 100)
+    @Size(max = 30)
     private String telefoneContato;
 
     @Column(name = "email_contato", length = 255)
+    @Email
+    @Size(max = 255)
     private String emailContato;
 
     @ManyToOne(fetch = FetchType.LAZY)

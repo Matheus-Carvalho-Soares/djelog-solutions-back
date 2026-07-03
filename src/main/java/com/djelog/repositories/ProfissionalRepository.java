@@ -5,11 +5,13 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface ProfissionalRepository extends JpaRepository<Profissional, UUID> {
     List<Profissional> findByUsuario_Id(UUID usuarioId);
+    Optional<Profissional> findByIdAndUsuario_Id(UUID id, UUID usuarioId);
 
     boolean existsByIdAndUsuario_Id(UUID id, UUID usuarioId);
 }

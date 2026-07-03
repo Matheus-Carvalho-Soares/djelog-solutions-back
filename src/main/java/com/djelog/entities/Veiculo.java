@@ -1,6 +1,12 @@
 package com.djelog.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -14,17 +20,25 @@ public class Veiculo {
     private UUID id;
 
     @Column(nullable = false)
+    @NotBlank
+    @Size(max = 80)
     private String marca;
 
+    @Min(1900)
+    @Max(2100)
     private Integer ano;
 
     @Column(name = "placa", nullable = false, length = 10)
+    @NotBlank
+    @Pattern(regexp = "^[A-Za-z0-9-]{7,10}$")
     private String placa;
 
     @Column(name = "nome")
+    @Size(max = 120)
     private String nome;
 
     @Column(name = "qtdPeso", precision = 10, scale = 2)
+    @DecimalMin(value = "0.0", inclusive = false)
     private BigDecimal qtdPeso;
 
     @ManyToOne(fetch = FetchType.LAZY)

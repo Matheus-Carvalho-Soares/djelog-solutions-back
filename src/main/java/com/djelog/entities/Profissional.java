@@ -1,6 +1,8 @@
 package com.djelog.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
@@ -12,8 +14,11 @@ public class Profissional {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotBlank
+    @Size(max = 120)
     private String nome;
 
+    @Size(max = 30)
     private String telefone;
 
     @ManyToOne(fetch = FetchType.LAZY)

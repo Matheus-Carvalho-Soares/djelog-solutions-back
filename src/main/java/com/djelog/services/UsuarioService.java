@@ -1,6 +1,7 @@
 package com.djelog.services;
 
 import com.djelog.dtos.UsuarioDTO;
+import com.djelog.dtos.UsuarioUpdateDTO;
 import com.djelog.entities.Usuario;
 import com.djelog.repositories.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -80,6 +81,32 @@ public class UsuarioService {
         }
 
         return usuarioRepository.save(usuario);
+    }
+
+    public Usuario atualizarPerfil(UUID id, UsuarioUpdateDTO usuarioDTO) {
+        Usuario usuario = findById(id);
+
+        if (usuarioDTO.getNome() != null) {
+            usuario.setNome(usuarioDTO.getNome().trim());
+        }
+
+        if (usuarioDTO.getEmail() != null && !usuarioDTO.getEmail().equalsIgnoreCase(usuario.getEmail())) {
+            if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
+                throw new IllegalArgumentException("Email já cadastrado");
+            }
+            usuario.setEmail(usuarioDTO.getEmail().trim());
+        }
+
+        return usuarioRepository.save(usuario);
+    }
+
+    public void alterarSenha(UUID id, String senhaAtual, String novaSenha) {
+        Usuario usuario = findById(id);
+        if (!passwordEncoder.matches(senhaAtual, usuario.getSenha())) {
+            throw new IllegalArgumentException("Senha atual inválida");
+        }
+        usuario.setSenha(passwordEncoder.encode(novaSenha));
+        usuarioRepository.save(usuario);
     }
 }
 

@@ -1,11 +1,24 @@
 package com.djelog.dtos;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 import java.util.UUID;
 
 public class EstadiaDTO {
     private UUID id;
+
+    @Valid
+    @NotNull
     private ViagemDTO viagem;
+
+    @Size(max = 2000)
     private String descricao;
+
+    @NotNull
+    @Min(0)
     private Integer valor;
 
     public EstadiaDTO() {

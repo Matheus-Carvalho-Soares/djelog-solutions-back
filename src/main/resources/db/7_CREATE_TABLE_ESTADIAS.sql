@@ -5,7 +5,7 @@ create table estadia
     id_viagem UUID not null,
     descricao TEXT,
     valor     INT,
-    constraint fk_despesas_viagem
+    constraint fk_estadia_viagem
         foreign KEY (id_viagem)
             references viagem (id)
             on delete set null

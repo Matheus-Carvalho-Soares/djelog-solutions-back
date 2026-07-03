@@ -1,6 +1,10 @@
 package com.djelog.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,25 +31,34 @@ public class Viagem {
     private Veiculo veiculo;
 
     @Column(name = "inicio_frete", nullable = false)
+    @NotBlank
+    @Size(max = 120)
     private String inicioFrete;
 
     @Column(name = "fim_frete")
+    @Size(max = 120)
     private String fimFrete;
 
     @Column(name = "valor_frete", nullable = false, precision = 10, scale = 2)
+    @NotNull
+    @DecimalMin(value = "0.0", inclusive = false)
     private BigDecimal valorFrete;
 
     @Column(precision = 10, scale = 2)
+    @DecimalMin(value = "0.0")
     private BigDecimal comissao;
 
 
     @Column(name = "data_inicio", nullable = false)
+    @NotNull
     private LocalDateTime dataInicio;
 
     @Column(name = "data_fim")
     private LocalDateTime dataFim;
 
     @Column(nullable = false, length = 50)
+    @NotBlank
+    @Size(max = 50)
     private String status;
 
     public Viagem() {

@@ -3,45 +3,35 @@ package com.djelog.controllers;
 import com.djelog.dtos.EmpresaDTO;
 import com.djelog.entities.Empresa;
 import com.djelog.repositories.EmpresaRepository;
+import com.djelog.services.CurrentUserService;
 import com.djelog.services.UsuarioService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/empresa")
-@CrossOrigin(origins = "*")
 public class EmpresaController {
 
     private final EmpresaRepository empresaRepository;
     private final UsuarioService usuarioService;
+    private final CurrentUserService currentUserService;
 
-    public EmpresaController(EmpresaRepository empresaRepository, UsuarioService usuarioService) {
+    public EmpresaController(EmpresaRepository empresaRepository, UsuarioService usuarioService, CurrentUserService currentUserService) {
         this.empresaRepository = empresaRepository;
         this.usuarioService = usuarioService;
-    }
-
-    private UUID getAuthenticatedUserId(Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return null;
-        }
-        String email = authentication.getName();
-        if (email == null || email.isBlank()) {
-            return null;
-        }
-        return usuarioService.findByEmail(email).getId();
+        this.currentUserService = currentUserService;
     }
 
     @GetMapping("/findAll")
-    public ResponseEntity<List<EmpresaDTO>> findAll(Authentication authentication) {
-        UUID usuarioId = getAuthenticatedUserId(authentication);
-        if (usuarioId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    public ResponseEntity<List<EmpresaDTO>> findAll() {
+        UUID usuarioId = currentUserService.getCurrentUserId();
         List<Empresa> empresas = empresaRepository.findByUsuario_Id(usuarioId);
         List<EmpresaDTO> empresasDTO = empresas.stream().map(this::convertToDTO).toList();
         return empresasDTO.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(empresasDTO);
@@ -49,30 +39,25 @@ public class EmpresaController {
 
     @GetMapping("/{id}")
     public ResponseEntity<EmpresaDTO> findById(@PathVariable("id") UUID id) {
-        return empresaRepository.findById(id)
+        UUID usuarioId = currentUserService.getCurrentUserId();
+        return empresaRepository.findByIdAndUsuario_Id(id, usuarioId)
                 .map(this::convertToDTO)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<EmpresaDTO> create(@RequestBody Empresa empresa, Authentication authentication) {
-        UUID usuarioId = getAuthenticatedUserId(authentication);
-        if (usuarioId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+    public ResponseEntity<EmpresaDTO> create(@Valid @RequestBody Empresa empresa) {
+        UUID usuarioId = currentUserService.getCurrentUserId();
         empresa.setUsuario(usuarioService.findById(usuarioId));
         Empresa saved = empresaRepository.save(empresa);
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(saved));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<EmpresaDTO> update(@PathVariable(name = "id") UUID id, @RequestBody Empresa empresa, Authentication authentication) {
-        UUID usuarioId = getAuthenticatedUserId(authentication);
-        if (usuarioId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        return empresaRepository.findById(id)
+    public ResponseEntity<EmpresaDTO> update(@PathVariable(name = "id") UUID id, @Valid @RequestBody Empresa empresa) {
+        UUID usuarioId = currentUserService.getCurrentUserId();
+        return empresaRepository.findByIdAndUsuario_Id(id, usuarioId)
                 .map(existing -> {
                     existing.setNome(empresa.getNome());
                     existing.setDescricao(empresa.getDescricao());
@@ -88,10 +73,13 @@ public class EmpresaController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable("id") UUID id) {
-        if (!empresaRepository.existsById(id)) {
+        UUID usuarioId = currentUserService.getCurrentUserId();
+        Empresa empresa = empresaRepository.findByIdAndUsuario_Id(id, usuarioId)
+                .orElseThrow(NoSuchElementException::new);
+        if (empresa == null) {
             return ResponseEntity.notFound().build();
         }
-        empresaRepository.deleteById(id);
+        empresaRepository.delete(empresa);
         return ResponseEntity.noContent().build();
     }
 

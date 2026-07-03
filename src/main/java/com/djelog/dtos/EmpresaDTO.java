@@ -1,13 +1,30 @@
 package com.djelog.dtos;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+
 import java.util.UUID;
 
 public class EmpresaDTO {
     private UUID id;
+
+    @NotBlank
+    @Size(max = 120)
     private String nome;
+
+    @Size(max = 2000)
     private String descricao;
+
+    @NotBlank
+    @Size(max = 100)
     private String nomeContato;
+
+    @Size(max = 30)
     private String telefoneContato;
+
+    @Email
+    @Size(max = 255)
     private String emailContato;
 
     public EmpresaDTO() {

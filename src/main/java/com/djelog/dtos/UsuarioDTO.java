@@ -1,14 +1,27 @@
 package com.djelog.dtos;
 
 import com.djelog.entities.Cargo;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
 
 public class UsuarioDTO {
     
     private UUID id;
+
+    @NotBlank
+    @Size(max = 120)
     private String nome;
+
+    @Email
+    @NotBlank
+    @Size(max = 255)
     private String email;
+
+    @NotBlank
+    @Size(min = 10, max = 128)
     private String senha;
     private Cargo cargo;
 

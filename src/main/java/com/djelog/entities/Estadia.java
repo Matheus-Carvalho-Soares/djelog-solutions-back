@@ -13,7 +13,7 @@ public class Estadia {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_viagem", referencedColumnName = "id", nullable = false, foreignKey = @ForeignKey(name = "fk_despesas_viagem"))
+    @JoinColumn(name = "id_viagem", referencedColumnName = "id", nullable = false, foreignKey = @ForeignKey(name = "fk_estadia_viagem"))
     private Viagem viagem;
 
     @Column(columnDefinition = "TEXT")

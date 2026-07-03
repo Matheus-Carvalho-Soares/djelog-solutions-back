@@ -1,20 +1,50 @@
 package com.djelog.dtos;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 public class ViagemDTO {
     private UUID id;
+
+    @Valid
+    @NotNull
     private ProfissionalDTO profissional;
+
+    @Valid
+    @NotNull
     private EmpresaDTO empresa;
+
+    @Valid
+    @NotNull
     private VeiculoDTO veiculo;
+
+    @NotBlank
+    @Size(max = 120)
     private String inicioFrete;
+
+    @Size(max = 120)
     private String fimFrete;
+
+    @NotNull
+    @DecimalMin(value = "0.0", inclusive = false)
     private BigDecimal valorFrete;
+
+    @DecimalMin(value = "0.0")
     private BigDecimal comissao;
+
+    @NotNull
     private LocalDateTime dataInicio;
     private LocalDateTime dataFim;
+
+    @NotBlank
+    @Size(max = 50)
     private String status;
 
     public ViagemDTO() {

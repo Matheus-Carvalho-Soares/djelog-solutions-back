@@ -161,7 +161,7 @@ A configuração principal usa PostgreSQL:
 
 ```properties
 spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
-spring.jpa.hibernate.ddl-auto=update
+spring.jpa.hibernate.ddl-auto=validate
 ```
 
 O Hibernate atualiza o schema automaticamente em tempo de execução. A pasta `src/main/resources/db` contém scripts SQL históricos/evolutivos que ajudam a entender e preparar a estrutura do banco quando necessário.
