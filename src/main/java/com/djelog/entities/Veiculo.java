@@ -37,7 +37,7 @@ public class Veiculo {
     @Size(max = 120)
     private String nome;
 
-    @Column(name = "qtdPeso", precision = 10, scale = 2)
+    @Column(name = "qtd_peso", precision = 10, scale = 2)
     @DecimalMin(value = "0.0", inclusive = false)
     private BigDecimal qtdPeso;
 
