@@ -29,7 +29,6 @@ public class UsuarioService {
         usuario.setNome(usuarioDTO.getNome());
         usuario.setEmail(usuarioDTO.getEmail());
         usuario.setSenha(passwordEncoder.encode(usuarioDTO.getSenha()));
-        usuario.setCargo(usuarioDTO.getCargo());
         
         return usuarioRepository.save(usuario);
     }
@@ -39,7 +38,6 @@ public class UsuarioService {
         userWithoutPassword.setId(usuarioDTO.getId());
         userWithoutPassword.setNome(usuarioDTO.getNome());
         userWithoutPassword.setEmail(usuarioDTO.getEmail());
-        userWithoutPassword.setCargo(usuarioDTO.getCargo());
 
         return userWithoutPassword;
     }
@@ -74,10 +72,6 @@ public class UsuarioService {
 
         if (usuarioDTO.getSenha() != null && !usuarioDTO.getSenha().isBlank()) {
             usuario.setSenha(passwordEncoder.encode(usuarioDTO.getSenha()));
-        }
-
-        if (usuarioDTO.getCargo() != null) {
-            usuario.setCargo(usuarioDTO.getCargo());
         }
 
         return usuarioRepository.save(usuario);

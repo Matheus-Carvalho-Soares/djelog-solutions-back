@@ -1,0 +1,7 @@
+ALTER TABLE IF EXISTS usuario
+    DROP CONSTRAINT IF EXISTS fk_usuario_cargo;
+
+ALTER TABLE IF EXISTS usuario
+    DROP COLUMN IF EXISTS id_cargo;
+
+DROP TABLE IF EXISTS cargo;

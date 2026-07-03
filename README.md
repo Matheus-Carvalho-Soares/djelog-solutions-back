@@ -192,7 +192,6 @@ Caso o frontend seja publicado em outro domínio, adicione a nova origem em `Sec
 - `POST /api/auth/register`: cadastra usuário.
 - `POST /api/auth/login`: autentica usuário e retorna JWT.
 - `PUT /api/auth/usuario/{id}`: atualiza usuário.
-- `GET /api/cargo/findAll`: lista cargos.
 - `/api/profissional`: consulta e manutenção de profissionais.
 - `/api/veiculo`: consulta e manutenção de veículos.
 - `/api/empresa`: consulta e manutenção de empresas.

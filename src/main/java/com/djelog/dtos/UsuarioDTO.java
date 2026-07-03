@@ -1,6 +1,5 @@
 package com.djelog.dtos;
 
-import com.djelog.entities.Cargo;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -23,7 +22,6 @@ public class UsuarioDTO {
     @NotBlank
     @Size(min = 10, max = 128)
     private String senha;
-    private Cargo cargo;
 
     public UUID getId() {
         return id;
@@ -57,11 +55,4 @@ public class UsuarioDTO {
         this.senha = senha;
     }
 
-    public Cargo getCargo() {
-        return cargo;
-    }
-
-    public void setCargo(Cargo cargo) {
-        this.cargo = cargo;
-    }
 }

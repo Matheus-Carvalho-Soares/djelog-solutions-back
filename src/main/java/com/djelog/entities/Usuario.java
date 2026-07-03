@@ -20,10 +20,6 @@ public class Usuario {
     @Column(nullable = false)
     private String senha;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_cargo", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_usuario_cargo"))
-    private Cargo cargo;
-
     public Usuario() {
     }
 
@@ -59,11 +55,4 @@ public class Usuario {
         this.senha = senha;
     }
 
-    public Cargo getCargo() {
-        return cargo;
-    }
-
-    public void setCargo(Cargo cargo) {
-        this.cargo = cargo;
-    }
 }

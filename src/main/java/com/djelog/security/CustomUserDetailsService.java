@@ -22,18 +22,13 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Usuario usuario = usuarioRepository.findByEmailWithCargo(username)
+        Usuario usuario = usuarioRepository.findByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
-
-        String role = "ROLE_USER";
-        if (usuario.getCargo() != null && usuario.getCargo().getNome() != null && !usuario.getCargo().getNome().isBlank()) {
-            role = "ROLE_" + usuario.getCargo().getNome().trim().toUpperCase();
-        }
 
         return new User(
                 usuario.getEmail(),
                 usuario.getSenha(),
-                List.of(new SimpleGrantedAuthority(role))
+                List.of(new SimpleGrantedAuthority("ROLE_USER"))
         );
     }
 }
