@@ -1,6 +1,7 @@
 package com.djelog.repositories;
 
 import com.djelog.entities.Viagem;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,8 +14,12 @@ import java.util.UUID;
 
 @Repository
 public interface ViagemRepository extends JpaRepository<Viagem, UUID> {
+    @EntityGraph(attributePaths = {"profissional", "empresa", "veiculo"})
     List<Viagem> findByProfissional_Usuario_Id(UUID usuarioId);
+
+    @EntityGraph(attributePaths = {"profissional", "empresa", "veiculo"})
     Optional<Viagem> findByIdAndProfissional_Usuario_Id(UUID id, UUID usuarioId);
+
     boolean existsByIdAndProfissional_Usuario_Id(UUID id, UUID usuarioId);
 
     @Query("""
