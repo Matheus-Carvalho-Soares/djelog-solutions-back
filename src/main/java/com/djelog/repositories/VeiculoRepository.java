@@ -1,6 +1,7 @@
 package com.djelog.repositories;
 
 import com.djelog.entities.Veiculo;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,7 +11,11 @@ import java.util.UUID;
 
 @Repository
 public interface VeiculoRepository extends JpaRepository<Veiculo, UUID> {
+    @EntityGraph(attributePaths = "profissional")
     List<Veiculo> findByProfissional_Usuario_Id(UUID usuarioId);
+
+    @EntityGraph(attributePaths = "profissional")
     Optional<Veiculo> findByIdAndProfissional_Usuario_Id(UUID id, UUID usuarioId);
+
     boolean existsByIdAndProfissional_Usuario_Id(UUID id, UUID usuarioId);
 }
