@@ -17,6 +17,9 @@ public interface EstadiaRepository extends JpaRepository<Estadia, UUID> {
     @Query("SELECT e FROM Estadia e JOIN FETCH e.viagem v WHERE v.id = :viagemId")
     List<Estadia> findByViagemIdWithViagem(@Param("viagemId") UUID viagemId);
 
+    @Query("SELECT e FROM Estadia e JOIN FETCH e.viagem v WHERE v.id IN :viagemIds")
+    List<Estadia> findByViagemIdsWithViagem(@Param("viagemIds") List<UUID> viagemIds);
+
     @Query("SELECT e FROM Estadia e JOIN FETCH e.viagem v JOIN FETCH v.profissional p WHERE p.usuario.id = :usuarioId")
     List<Estadia> findByUsuarioId(@Param("usuarioId") UUID usuarioId);
 

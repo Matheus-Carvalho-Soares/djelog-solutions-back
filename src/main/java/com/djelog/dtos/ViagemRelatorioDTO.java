@@ -11,6 +11,8 @@ public class ViagemRelatorioDTO {
     private String inicioFrete;
     private String fimFrete;
     private BigDecimal valorFrete;
+    private BigDecimal totalEstadias;
+    private BigDecimal receitaTotal;
     private BigDecimal comissao;
     private List<DespesaDTO> despesas;
     private BigDecimal totalDespesas;
@@ -34,12 +36,48 @@ public class ViagemRelatorioDTO {
             String veiculoMarca,
             String veiculoPlaca
     ) {
+        this(
+                dataInicio,
+                dataFim,
+                status,
+                inicioFrete,
+                fimFrete,
+                valorFrete,
+                BigDecimal.ZERO,
+                valorFrete,
+                comissao,
+                despesas,
+                profissionalNome,
+                empresaNome,
+                veiculoMarca,
+                veiculoPlaca
+        );
+    }
+
+    public ViagemRelatorioDTO(
+            LocalDateTime dataInicio,
+            LocalDateTime dataFim,
+            String status,
+            String inicioFrete,
+            String fimFrete,
+            BigDecimal valorFrete,
+            BigDecimal totalEstadias,
+            BigDecimal receitaTotal,
+            BigDecimal comissao,
+            List<DespesaDTO> despesas,
+            String profissionalNome,
+            String empresaNome,
+            String veiculoMarca,
+            String veiculoPlaca
+    ) {
         this.dataInicio = dataInicio;
         this.dataFim = dataFim;
         this.status = status;
         this.inicioFrete = inicioFrete;
         this.fimFrete = fimFrete;
         this.valorFrete = valorFrete;
+        this.totalEstadias = defaultZero(totalEstadias);
+        this.receitaTotal = defaultZero(receitaTotal);
         this.comissao = comissao;
         this.despesas = despesas;
         this.totalDespesas = calcularTotalDespesas(despesas);
@@ -97,6 +135,22 @@ public class ViagemRelatorioDTO {
         this.valorFrete = valorFrete;
     }
 
+    public BigDecimal getTotalEstadias() {
+        return totalEstadias;
+    }
+
+    public void setTotalEstadias(BigDecimal totalEstadias) {
+        this.totalEstadias = totalEstadias;
+    }
+
+    public BigDecimal getReceitaTotal() {
+        return receitaTotal;
+    }
+
+    public void setReceitaTotal(BigDecimal receitaTotal) {
+        this.receitaTotal = receitaTotal;
+    }
+
     public BigDecimal getComissao() {
         return comissao;
     }
@@ -128,8 +182,13 @@ public class ViagemRelatorioDTO {
         }
         return despesas.stream()
                 .map(DespesaDTO::getValor)
+                .filter(valor -> valor != null)
                 .map(BigDecimal::valueOf)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal defaultZero(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 
     public String getProfissionalNome() {

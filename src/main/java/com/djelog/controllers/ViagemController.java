@@ -1,9 +1,11 @@
 package com.djelog.controllers;
 
+import com.djelog.dtos.RelatorioAgrupadoDTO;
 import com.djelog.dtos.ViagemDTO;
 import com.djelog.dtos.ViagemRelatorioDTO;
 import com.djelog.entities.Viagem;
 import com.djelog.services.CurrentUserService;
+import com.djelog.services.RelatorioService;
 import com.djelog.services.ViagemService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -28,10 +30,16 @@ import java.util.UUID;
 public class ViagemController {
 
     private final ViagemService viagemService;
+    private final RelatorioService relatorioService;
     private final CurrentUserService currentUserService;
 
-    public ViagemController(ViagemService viagemService, CurrentUserService currentUserService) {
+    public ViagemController(
+            ViagemService viagemService,
+            RelatorioService relatorioService,
+            CurrentUserService currentUserService
+    ) {
         this.viagemService = viagemService;
+        this.relatorioService = relatorioService;
         this.currentUserService = currentUserService;
     }
 
@@ -46,14 +54,33 @@ public class ViagemController {
             @RequestParam("dataInicio") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
             @RequestParam("dataFim") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim
     ) {
-        if (dataInicio == null || dataFim == null) {
-            throw new IllegalArgumentException("Informe a data inicial e a data final.");
-        }
-        if (dataInicio.isAfter(dataFim)) {
-            throw new IllegalArgumentException("A data inicial deve ser anterior ou igual a data final.");
-        }
+        List<ViagemRelatorioDTO> dados = relatorioService.findDadosByDataInicioFim(
+                currentUserService.getCurrentUserId(),
+                dataInicio,
+                dataFim
+        );
+        return dados.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(dados);
+    }
 
-        List<ViagemRelatorioDTO> dados = viagemService.findDadosByDataInicioFim(
+    @GetMapping("/excel/dados/por-veiculo")
+    public ResponseEntity<List<RelatorioAgrupadoDTO>> findFaturamentoPorVeiculo(
+            @RequestParam("dataInicio") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
+            @RequestParam("dataFim") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim
+    ) {
+        List<RelatorioAgrupadoDTO> dados = relatorioService.findFaturamentoPorVeiculo(
+                currentUserService.getCurrentUserId(),
+                dataInicio,
+                dataFim
+        );
+        return dados.isEmpty() ? ResponseEntity.noContent().build() : ResponseEntity.ok(dados);
+    }
+
+    @GetMapping("/excel/dados/por-profissional")
+    public ResponseEntity<List<RelatorioAgrupadoDTO>> findFaturamentoPorProfissional(
+            @RequestParam("dataInicio") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
+            @RequestParam("dataFim") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim
+    ) {
+        List<RelatorioAgrupadoDTO> dados = relatorioService.findFaturamentoPorProfissional(
                 currentUserService.getCurrentUserId(),
                 dataInicio,
                 dataFim

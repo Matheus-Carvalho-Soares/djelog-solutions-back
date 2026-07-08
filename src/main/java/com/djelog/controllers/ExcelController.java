@@ -45,6 +45,32 @@ public class ExcelController {
                 .body(excelFile.content());
     }
 
+    @GetMapping("/relatorio-por-veiculo")
+    public ResponseEntity<byte[]> exportRelatorioPorVeiculo(
+            @RequestParam("dataInicio") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
+            @RequestParam("dataFim") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim
+    ) {
+        UUID usuarioId = currentUserService.getCurrentUserId();
+        ExcelFile excelFile = excelService.gerarRelatorioPorVeiculo(usuarioId, dataInicio, dataFim);
+
+        return ResponseEntity.ok()
+                .headers(buildDownloadHeaders(excelFile.filename()))
+                .body(excelFile.content());
+    }
+
+    @GetMapping("/relatorio-por-profissional")
+    public ResponseEntity<byte[]> exportRelatorioPorProfissional(
+            @RequestParam("dataInicio") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
+            @RequestParam("dataFim") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim
+    ) {
+        UUID usuarioId = currentUserService.getCurrentUserId();
+        ExcelFile excelFile = excelService.gerarRelatorioPorProfissional(usuarioId, dataInicio, dataFim);
+
+        return ResponseEntity.ok()
+                .headers(buildDownloadHeaders(excelFile.filename()))
+                .body(excelFile.content());
+    }
+
     private HttpHeaders buildDownloadHeaders(String filename) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(EXCEL_MEDIA_TYPE);

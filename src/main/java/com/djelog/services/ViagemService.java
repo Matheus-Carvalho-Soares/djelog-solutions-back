@@ -1,16 +1,13 @@
 package com.djelog.services;
 
-import com.djelog.dtos.DespesaDTO;
 import com.djelog.dtos.EmpresaDTO;
 import com.djelog.dtos.ProfissionalDTO;
 import com.djelog.dtos.VeiculoDTO;
 import com.djelog.dtos.ViagemDTO;
-import com.djelog.dtos.ViagemRelatorioDTO;
 import com.djelog.entities.Empresa;
 import com.djelog.entities.Profissional;
 import com.djelog.entities.Veiculo;
 import com.djelog.entities.Viagem;
-import com.djelog.repositories.DespesaRepository;
 import com.djelog.repositories.EmpresaRepository;
 import com.djelog.repositories.ProfissionalRepository;
 import com.djelog.repositories.VeiculoRepository;
@@ -19,8 +16,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -31,20 +26,17 @@ import java.util.UUID;
 public class ViagemService {
 
     private final ViagemRepository viagemRepository;
-    private final DespesaRepository despesaRepository;
     private final EmpresaRepository empresaRepository;
     private final ProfissionalRepository profissionalRepository;
     private final VeiculoRepository veiculoRepository;
 
     public ViagemService(
             ViagemRepository viagemRepository,
-            DespesaRepository despesaRepository,
             EmpresaRepository empresaRepository,
             ProfissionalRepository profissionalRepository,
             VeiculoRepository veiculoRepository
     ) {
         this.viagemRepository = viagemRepository;
-        this.despesaRepository = despesaRepository;
         this.empresaRepository = empresaRepository;
         this.profissionalRepository = profissionalRepository;
         this.veiculoRepository = veiculoRepository;
@@ -95,54 +87,6 @@ public class ViagemService {
         Viagem viagem = viagemRepository.findByIdAndProfissional_Usuario_Id(id, usuarioId)
                 .orElseThrow(NoSuchElementException::new);
         viagemRepository.delete(viagem);
-    }
-
-    @Transactional(readOnly = true)
-    public List<ViagemRelatorioDTO> findDadosByDataInicioFim(UUID usuarioId, LocalDateTime dataInicio, LocalDateTime dataFim) {
-        List<Viagem> viagens = viagemRepository.findByPeriodoSobreposto(usuarioId, dataInicio, dataFim);
-        return viagens.stream().map(this::toRelatorioDto).toList();
-    }
-
-    private ViagemRelatorioDTO toRelatorioDto(Viagem v) {
-        BigDecimal comissaoCalculada = v.getValorFrete().multiply(v.getComissao().divide(new BigDecimal(100)));
-
-        List<DespesaDTO> despesas = despesaRepository.findByViagemIdWithViagem(v.getId()).stream()
-                .map(despesa -> {
-                    DespesaDTO dto = new DespesaDTO();
-                    dto.setId(despesa.getId());
-                    dto.setNome(despesa.getNome());
-                    dto.setDescricao(despesa.getDescricao());
-                    dto.setValor(despesa.getValor());
-                    return dto;
-                })
-                .toList();
-
-        ViagemRelatorioDTO dto = new ViagemRelatorioDTO(
-                v.getDataInicio(),
-                v.getDataFim(),
-                v.getStatus(),
-                v.getInicioFrete(),
-                v.getFimFrete(),
-                v.getValorFrete(),
-                comissaoCalculada,
-                despesas,
-                v.getProfissional() != null ? v.getProfissional().getNome() : null,
-                v.getEmpresa() != null ? v.getEmpresa().getNome() : null,
-                v.getVeiculo() != null ? v.getVeiculo().getMarca() : null,
-                v.getVeiculo() != null ? v.getVeiculo().getPlaca() : null
-        );
-
-        BigDecimal valorFrete = defaultZero(v.getValorFrete());
-        BigDecimal comissao = defaultZero(comissaoCalculada);
-        BigDecimal totalDespesas = defaultZero(dto.getTotalDespesas());
-
-        dto.setLucroLiquido(valorFrete.subtract(comissao.add(totalDespesas)));
-
-        return dto;
-    }
-
-    private BigDecimal defaultZero(BigDecimal value) {
-        return value == null ? BigDecimal.ZERO : value;
     }
 
     private void setManagedRelationships(Viagem viagem, UUID usuarioId) {

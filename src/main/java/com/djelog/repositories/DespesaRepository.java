@@ -17,6 +17,9 @@ public interface DespesaRepository extends JpaRepository<Despesa, UUID> {
     @Query("SELECT d FROM Despesa d JOIN FETCH d.viagem v WHERE v.id = :viagemId")
     List<Despesa> findByViagemIdWithViagem(@Param("viagemId") UUID viagemId);
 
+    @Query("SELECT d FROM Despesa d JOIN FETCH d.viagem v WHERE v.id IN :viagemIds")
+    List<Despesa> findByViagemIdsWithViagem(@Param("viagemIds") List<UUID> viagemIds);
+
     @Query("SELECT d FROM Despesa d JOIN FETCH d.viagem v JOIN FETCH v.profissional p WHERE p.usuario.id = :usuarioId")
     List<Despesa> findByUsuarioId(@Param("usuarioId") UUID usuarioId);
 
