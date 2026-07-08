@@ -5,7 +5,9 @@ import com.djelog.entities.Profissional;
 import com.djelog.entities.Usuario;
 import com.djelog.entities.Veiculo;
 import com.djelog.entities.Viagem;
+import com.djelog.repositories.DespesaRepository;
 import com.djelog.repositories.EmpresaRepository;
+import com.djelog.repositories.EstadiaRepository;
 import com.djelog.repositories.ProfissionalRepository;
 import com.djelog.repositories.UsuarioRepository;
 import com.djelog.repositories.VeiculoRepository;
@@ -46,6 +48,12 @@ class FriendlyErrorsIntegrationTests {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
+    private DespesaRepository despesaRepository;
+
+    @Autowired
+    private EstadiaRepository estadiaRepository;
+
+    @Autowired
     private EmpresaRepository empresaRepository;
 
     @Autowired
@@ -68,6 +76,8 @@ class FriendlyErrorsIntegrationTests {
 
     @BeforeEach
     void cleanDatabase() {
+        despesaRepository.deleteAll();
+        estadiaRepository.deleteAll();
         viagemRepository.deleteAll();
         veiculoRepository.deleteAll();
         empresaRepository.deleteAll();
@@ -219,6 +229,45 @@ class FriendlyErrorsIntegrationTests {
                 .andExpect(jsonPath("$.profissional.nome").value("Motorista Teste"))
                 .andExpect(jsonPath("$.empresa.nome").value("Empresa Teste"))
                 .andExpect(jsonPath("$.veiculo.placa").value("ABC1234"));
+    }
+
+    @Test
+    void despesaAndEstadiaCanBeCreatedWithOnlyTripId() throws Exception {
+        Usuario usuario = createUser("trip-costs@example.com", "SenhaAtual123");
+        Profissional profissional = createProfissional(usuario);
+        Empresa empresa = createEmpresa(usuario);
+        Veiculo veiculo = createVeiculo(profissional);
+        Viagem viagem = createViagem(profissional, empresa, veiculo);
+        String token = bearerToken(usuario);
+
+        mockMvc.perform(post("/api/despesas")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "nome": "Pedagio",
+                                  "descricao": "Pedagio da rota",
+                                  "valor": 80,
+                                  "viagem": { "id": "%s" }
+                                }
+                                """.formatted(viagem.getId())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.nome").value("Pedagio"))
+                .andExpect(jsonPath("$.viagem.id").value(viagem.getId().toString()));
+
+        mockMvc.perform(post("/api/estadias")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "descricao": "Pernoite",
+                                  "valor": 120,
+                                  "viagem": { "id": "%s" }
+                                }
+                                """.formatted(viagem.getId())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.descricao").value("Pernoite"))
+                .andExpect(jsonPath("$.viagem.id").value(viagem.getId().toString()));
     }
 
     @Test

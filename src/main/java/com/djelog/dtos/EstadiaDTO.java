@@ -1,6 +1,5 @@
 package com.djelog.dtos;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -10,7 +9,6 @@ import java.util.UUID;
 public class EstadiaDTO {
     private UUID id;
 
-    @Valid
     @NotNull(message = "Selecione uma viagem para a estadia.")
     private ViagemDTO viagem;
 
