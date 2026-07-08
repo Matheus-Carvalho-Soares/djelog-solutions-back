@@ -105,7 +105,6 @@ public class ViagemService {
 
     private ViagemRelatorioDTO toRelatorioDto(Viagem v) {
         BigDecimal comissaoCalculada = v.getValorFrete().multiply(v.getComissao().divide(new BigDecimal(100)));
-        v.setComissao(comissaoCalculada);
 
         List<DespesaDTO> despesas = despesaRepository.findByViagemIdWithViagem(v.getId()).stream()
                 .map(despesa -> {
