@@ -221,6 +221,86 @@ class FriendlyErrorsIntegrationTests {
                 .andExpect(jsonPath("$.veiculo.placa").value("ABC1234"));
     }
 
+    @Test
+    void viagemAndVeiculoWritesDoNotFailWithLazyAssociations() throws Exception {
+        Usuario usuario = createUser("lazy-writes@example.com", "SenhaAtual123");
+        Profissional profissional = createProfissional(usuario);
+        Empresa empresa = createEmpresa(usuario);
+        Veiculo veiculo = createVeiculo(profissional);
+        Viagem viagem = createViagem(profissional, empresa, veiculo);
+        String token = bearerToken(usuario);
+
+        mockMvc.perform(post("/api/veiculo")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "marca": "Scania",
+                                  "placa": "XYZ1234",
+                                  "status": true,
+                                  "profissional": { "id": "%s" }
+                                }
+                                """.formatted(profissional.getId())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.profissional.nome").value("Motorista Teste"));
+
+        mockMvc.perform(put("/api/veiculo/{id}", veiculo.getId())
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "marca": "Volvo Atualizado",
+                                  "placa": "ABC1234",
+                                  "status": true,
+                                  "profissional": { "id": "%s" }
+                                }
+                                """.formatted(profissional.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profissional.nome").value("Motorista Teste"));
+
+        mockMvc.perform(post("/api/viagem")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "inicioFrete": "Origem Nova",
+                                  "fimFrete": "Destino Novo",
+                                  "valorFrete": 1500.00,
+                                  "comissao": 100.00,
+                                  "dataInicio": "2026-07-06T10:00:00",
+                                  "status": "EM_ANDAMENTO",
+                                  "profissional": { "id": "%s" },
+                                  "empresa": { "id": "%s" },
+                                  "veiculo": { "id": "%s" }
+                                }
+                                """.formatted(profissional.getId(), empresa.getId(), veiculo.getId())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.profissional.nome").value("Motorista Teste"))
+                .andExpect(jsonPath("$.empresa.nome").value("Empresa Teste"))
+                .andExpect(jsonPath("$.veiculo.placa").value("ABC1234"));
+
+        mockMvc.perform(put("/api/viagem/{id}", viagem.getId())
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "inicioFrete": "Origem Atualizada",
+                                  "fimFrete": "Destino Atualizado",
+                                  "valorFrete": 1750.00,
+                                  "comissao": 100.00,
+                                  "dataInicio": "2026-07-07T10:00:00",
+                                  "status": "EM_ANDAMENTO",
+                                  "profissional": { "id": "%s" },
+                                  "empresa": { "id": "%s" },
+                                  "veiculo": { "id": "%s" }
+                                }
+                                """.formatted(profissional.getId(), empresa.getId(), veiculo.getId())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profissional.nome").value("Motorista Teste"))
+                .andExpect(jsonPath("$.empresa.nome").value("Empresa Teste"))
+                .andExpect(jsonPath("$.veiculo.placa").value("ABC1234"));
+    }
+
     private Usuario createUser(String email, String password) {
         Usuario usuario = new Usuario();
         usuario.setNome("Usuario Teste");
