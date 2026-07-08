@@ -8,11 +8,11 @@ import java.util.UUID;
 public class ProfissionalDTO {
     private UUID id;
 
-    @NotBlank
-    @Size(max = 120)
+    @NotBlank(message = "Informe o nome do motorista.")
+    @Size(max = 120, message = "Nome do motorista deve ter no maximo 120 caracteres.")
     private String nome;
 
-    @Size(max = 30)
+    @Size(max = 30, message = "Telefone deve ter no maximo 30 caracteres.")
     private String telefone;
     private Boolean status;
 

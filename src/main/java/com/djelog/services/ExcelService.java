@@ -39,7 +39,7 @@ public class ExcelService {
 
     public ExcelFile gerarRelatorioPorData(UUID usuarioId, LocalDateTime dataInicio, LocalDateTime dataFim) {
         if (dataInicio == null || dataFim == null || dataInicio.isAfter(dataFim)) {
-            throw new IllegalArgumentException("Período inválido");
+            throw new IllegalArgumentException("Periodo invalido. A data inicial deve ser anterior ou igual a data final.");
         }
 
         List<ViagemRelatorioDTO> dados = viagemService.findDadosByDataInicioFim(usuarioId, dataInicio, dataFim);

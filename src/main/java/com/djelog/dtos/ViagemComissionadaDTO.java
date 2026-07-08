@@ -10,22 +10,22 @@ import java.util.UUID;
 public class ViagemComissionadaDTO {
     private UUID id;
 
-    @NotBlank
-    @Size(max = 100)
+    @NotBlank(message = "Informe o inicio do frete.")
+    @Size(max = 100, message = "Inicio do frete deve ter no maximo 100 caracteres.")
     private String inicioFrete;
 
-    @Size(max = 100)
+    @Size(max = 100, message = "Fim do frete deve ter no maximo 100 caracteres.")
     private String fimFrete;
 
-    @NotNull
-    @Min(0)
+    @NotNull(message = "Informe o valor da viagem.")
+    @Min(value = 0, message = "Valor da viagem deve ser maior ou igual a zero.")
     private Integer valor;
 
-    @NotNull
-    @Min(0)
+    @NotNull(message = "Informe a comissao.")
+    @Min(value = 0, message = "Comissao deve ser maior ou igual a zero.")
     private Integer comissao;
 
-    @Size(max = 2000)
+    @Size(max = 2000, message = "Descricao deve ter no maximo 2000 caracteres.")
     private String descricao;
 
     public ViagemComissionadaDTO() {

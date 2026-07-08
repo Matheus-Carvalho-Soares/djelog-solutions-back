@@ -5,11 +5,11 @@ import jakarta.validation.constraints.Size;
 
 public class SenhaUpdateDTO {
 
-    @NotBlank
+    @NotBlank(message = "Informe sua senha atual.")
     private String senhaAtual;
 
-    @NotBlank
-    @Size(min = 10, max = 128)
+    @NotBlank(message = "Informe a nova senha.")
+    @Size(min = 10, max = 128, message = "Nova senha deve ter entre 10 e 128 caracteres.")
     private String novaSenha;
 
     public String getSenhaAtual() {

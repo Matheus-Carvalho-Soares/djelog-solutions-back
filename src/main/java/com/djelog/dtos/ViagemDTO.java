@@ -14,37 +14,37 @@ public class ViagemDTO {
     private UUID id;
 
     @Valid
-    @NotNull
+    @NotNull(message = "Selecione um motorista para a viagem.")
     private ProfissionalDTO profissional;
 
     @Valid
-    @NotNull
+    @NotNull(message = "Selecione uma empresa para a viagem.")
     private EmpresaDTO empresa;
 
     @Valid
-    @NotNull
+    @NotNull(message = "Selecione um veiculo para a viagem.")
     private VeiculoDTO veiculo;
 
-    @NotBlank
-    @Size(max = 120)
+    @NotBlank(message = "Informe o inicio do frete.")
+    @Size(max = 120, message = "Inicio do frete deve ter no maximo 120 caracteres.")
     private String inicioFrete;
 
-    @Size(max = 120)
+    @Size(max = 120, message = "Fim do frete deve ter no maximo 120 caracteres.")
     private String fimFrete;
 
-    @NotNull
-    @DecimalMin(value = "0.0", inclusive = false)
+    @NotNull(message = "Informe o valor do frete.")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Valor do frete deve ser maior que zero.")
     private BigDecimal valorFrete;
 
-    @DecimalMin(value = "0.0")
+    @DecimalMin(value = "0.0", message = "Comissao deve ser maior ou igual a zero.")
     private BigDecimal comissao;
 
-    @NotNull
+    @NotNull(message = "Informe a data de inicio.")
     private LocalDateTime dataInicio;
     private LocalDateTime dataFim;
 
-    @NotBlank
-    @Size(max = 50)
+    @NotBlank(message = "Informe o status da viagem.")
+    @Size(max = 50, message = "Status deve ter no maximo 50 caracteres.")
     private String status;
 
     public ViagemDTO() {

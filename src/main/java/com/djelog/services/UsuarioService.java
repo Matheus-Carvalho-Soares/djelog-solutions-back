@@ -7,6 +7,7 @@ import com.djelog.repositories.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
@@ -22,7 +23,7 @@ public class UsuarioService {
 
     public Usuario criarUsuario(UsuarioDTO usuarioDTO) {
         if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
-            throw new RuntimeException("Email já cadastrado");
+            throw new IllegalArgumentException("Email ja cadastrado.");
         }
 
         Usuario usuario = new Usuario();
@@ -44,12 +45,12 @@ public class UsuarioService {
 
     public Usuario findByEmail(String email) {
         return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new NoSuchElementException("Usuario nao encontrado."));
     }
 
     public Usuario findById(UUID id) {
         return usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new NoSuchElementException("Usuario nao encontrado."));
     }
 
     public Usuario buscarPorId(UUID id) {
@@ -65,7 +66,7 @@ public class UsuarioService {
 
         if (usuarioDTO.getEmail() != null && !usuarioDTO.getEmail().equals(usuario.getEmail())) {
             if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
-                throw new RuntimeException("Email já cadastrado");
+                throw new IllegalArgumentException("Email ja cadastrado.");
             }
             usuario.setEmail(usuarioDTO.getEmail());
         }
@@ -86,7 +87,7 @@ public class UsuarioService {
 
         if (usuarioDTO.getEmail() != null && !usuarioDTO.getEmail().equalsIgnoreCase(usuario.getEmail())) {
             if (usuarioRepository.existsByEmail(usuarioDTO.getEmail())) {
-                throw new IllegalArgumentException("Email já cadastrado");
+                throw new IllegalArgumentException("Email ja cadastrado.");
             }
             usuario.setEmail(usuarioDTO.getEmail().trim());
         }
@@ -97,7 +98,7 @@ public class UsuarioService {
     public void alterarSenha(UUID id, String senhaAtual, String novaSenha) {
         Usuario usuario = findById(id);
         if (!passwordEncoder.matches(senhaAtual, usuario.getSenha())) {
-            throw new IllegalArgumentException("Senha atual inválida");
+            throw new IllegalArgumentException("Senha atual invalida.");
         }
         usuario.setSenha(passwordEncoder.encode(novaSenha));
         usuarioRepository.save(usuario);

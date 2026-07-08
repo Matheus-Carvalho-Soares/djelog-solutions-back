@@ -89,11 +89,11 @@ public class EstadiaService {
         estadia.setValor(dto.getValor());
 
         if (dto.getViagem() == null || dto.getViagem().getId() == null) {
-            throw new IllegalArgumentException("Viagem obrigatória");
+            throw new IllegalArgumentException("Selecione uma viagem para a estadia.");
         }
 
         Viagem viagem = viagemRepository.findByIdAndProfissional_Usuario_Id(dto.getViagem().getId(), usuarioId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new NoSuchElementException("Viagem nao encontrada para este usuario."));
         estadia.setViagem(viagem);
 
         return estadia;
@@ -104,11 +104,11 @@ public class EstadiaService {
         estadia.setValor(dto.getValor());
 
         if (dto.getViagem() == null || dto.getViagem().getId() == null) {
-            throw new IllegalArgumentException("Viagem obrigatória");
+            throw new IllegalArgumentException("Selecione uma viagem para a estadia.");
         }
 
         Viagem viagem = viagemRepository.findByIdAndProfissional_Usuario_Id(dto.getViagem().getId(), usuarioId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new NoSuchElementException("Viagem nao encontrada para este usuario."));
         estadia.setViagem(viagem);
     }
 }

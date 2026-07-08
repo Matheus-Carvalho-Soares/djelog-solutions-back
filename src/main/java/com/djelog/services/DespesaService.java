@@ -91,11 +91,11 @@ public class DespesaService {
         despesa.setValor(dto.getValor());
 
         if (dto.getViagem() == null || dto.getViagem().getId() == null) {
-            throw new IllegalArgumentException("Viagem obrigatória");
+            throw new IllegalArgumentException("Selecione uma viagem para a despesa.");
         }
 
         Viagem viagem = viagemRepository.findByIdAndProfissional_Usuario_Id(dto.getViagem().getId(), usuarioId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new NoSuchElementException("Viagem nao encontrada para este usuario."));
         despesa.setViagem(viagem);
 
         return despesa;
@@ -107,11 +107,11 @@ public class DespesaService {
         despesa.setValor(dto.getValor());
 
         if (dto.getViagem() == null || dto.getViagem().getId() == null) {
-            throw new IllegalArgumentException("Viagem obrigatória");
+            throw new IllegalArgumentException("Selecione uma viagem para a despesa.");
         }
 
         Viagem viagem = viagemRepository.findByIdAndProfissional_Usuario_Id(dto.getViagem().getId(), usuarioId)
-                .orElseThrow(NoSuchElementException::new);
+                .orElseThrow(() -> new NoSuchElementException("Viagem nao encontrada para este usuario."));
         despesa.setViagem(viagem);
     }
 }

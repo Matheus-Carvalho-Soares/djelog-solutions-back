@@ -6,13 +6,13 @@ import jakarta.validation.constraints.Size;
 
 public class LoginRequest {
 
-    @Email
-    @NotBlank
-    @Size(max = 255)
+    @Email(message = "Informe um email valido.")
+    @NotBlank(message = "Informe seu email.")
+    @Size(max = 255, message = "Email deve ter no maximo 255 caracteres.")
     private String email;
 
-    @NotBlank
-    @Size(min = 8, max = 128)
+    @NotBlank(message = "Informe sua senha.")
+    @Size(min = 8, max = 128, message = "Senha deve ter entre 8 e 128 caracteres.")
     private String senha;
 
     public String getEmail() {

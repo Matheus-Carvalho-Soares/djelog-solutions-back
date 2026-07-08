@@ -12,18 +12,18 @@ public class DespesaDTO {
     private UUID id;
 
     @Valid
-    @NotNull
+    @NotNull(message = "Selecione uma viagem para a despesa.")
     private ViagemDTO viagem;
 
-    @NotBlank
-    @Size(max = 100)
+    @NotBlank(message = "Informe o nome da despesa.")
+    @Size(max = 100, message = "Nome da despesa deve ter no maximo 100 caracteres.")
     private String nome;
 
-    @Size(max = 2000)
+    @Size(max = 2000, message = "Descricao deve ter no maximo 2000 caracteres.")
     private String descricao;
 
-    @NotNull
-    @Min(0)
+    @NotNull(message = "Informe o valor da despesa.")
+    @Min(value = 0, message = "Valor da despesa deve ser maior ou igual a zero.")
     private Integer valor;
 
     public DespesaDTO() {

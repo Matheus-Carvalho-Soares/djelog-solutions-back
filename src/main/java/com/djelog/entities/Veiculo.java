@@ -20,25 +20,25 @@ public class Veiculo {
     private UUID id;
 
     @Column(nullable = false)
-    @NotBlank
-    @Size(max = 80)
+    @NotBlank(message = "Informe a marca do veiculo.")
+    @Size(max = 80, message = "Marca deve ter no maximo 80 caracteres.")
     private String marca;
 
-    @Min(1900)
-    @Max(2100)
+    @Min(value = 1900, message = "Ano deve ser maior ou igual a 1900.")
+    @Max(value = 2100, message = "Ano deve ser menor ou igual a 2100.")
     private Integer ano;
 
     @Column(name = "placa", nullable = false, length = 10)
-    @NotBlank
-    @Pattern(regexp = "^[A-Za-z0-9-]{7,10}$")
+    @NotBlank(message = "Informe a placa do veiculo.")
+    @Pattern(regexp = "^[A-Za-z0-9-]{7,10}$", message = "Placa deve ter de 7 a 10 caracteres, usando letras, numeros ou hifen.")
     private String placa;
 
     @Column(name = "nome")
-    @Size(max = 120)
+    @Size(max = 120, message = "Nome do veiculo deve ter no maximo 120 caracteres.")
     private String nome;
 
     @Column(name = "qtd_peso", precision = 10, scale = 2)
-    @DecimalMin(value = "0.0", inclusive = false)
+    @DecimalMin(value = "0.0", inclusive = false, message = "Peso deve ser maior que zero.")
     private BigDecimal qtdPeso;
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -31,34 +31,34 @@ public class Viagem {
     private Veiculo veiculo;
 
     @Column(name = "inicio_frete", nullable = false)
-    @NotBlank
-    @Size(max = 120)
+    @NotBlank(message = "Informe o inicio do frete.")
+    @Size(max = 120, message = "Inicio do frete deve ter no maximo 120 caracteres.")
     private String inicioFrete;
 
     @Column(name = "fim_frete")
-    @Size(max = 120)
+    @Size(max = 120, message = "Fim do frete deve ter no maximo 120 caracteres.")
     private String fimFrete;
 
     @Column(name = "valor_frete", nullable = false, precision = 10, scale = 2)
-    @NotNull
-    @DecimalMin(value = "0.0", inclusive = false)
+    @NotNull(message = "Informe o valor do frete.")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Valor do frete deve ser maior que zero.")
     private BigDecimal valorFrete;
 
     @Column(precision = 10, scale = 2)
-    @DecimalMin(value = "0.0")
+    @DecimalMin(value = "0.0", message = "Comissao deve ser maior ou igual a zero.")
     private BigDecimal comissao;
 
 
     @Column(name = "data_inicio", nullable = false)
-    @NotNull
+    @NotNull(message = "Informe a data de inicio.")
     private LocalDateTime dataInicio;
 
     @Column(name = "data_fim")
     private LocalDateTime dataFim;
 
     @Column(nullable = false, length = 50)
-    @NotBlank
-    @Size(max = 50)
+    @NotBlank(message = "Informe o status da viagem.")
+    @Size(max = 50, message = "Status deve ter no maximo 50 caracteres.")
     private String status;
 
     public Viagem() {

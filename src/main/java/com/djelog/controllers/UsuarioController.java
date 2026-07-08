@@ -46,14 +46,10 @@ public class UsuarioController {
 
     @PostMapping("/register")
     public ResponseEntity<Usuario> registrarUsuario(@Valid @RequestBody UsuarioDTO usuarioDTO) {
-        try {
-            Usuario usuario = usuarioService.criarUsuario(usuarioDTO);
+        Usuario usuario = usuarioService.criarUsuario(usuarioDTO);
 
-            Usuario userResponse = usuarioService.usuarioDtoToResponse(usuario);
-            return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        Usuario userResponse = usuarioService.usuarioDtoToResponse(usuario);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userResponse);
     }
 
     @PostMapping("/login")

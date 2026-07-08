@@ -9,22 +9,22 @@ import java.util.UUID;
 public class EmpresaDTO {
     private UUID id;
 
-    @NotBlank
-    @Size(max = 120)
+    @NotBlank(message = "Informe o nome da empresa.")
+    @Size(max = 120, message = "Nome da empresa deve ter no maximo 120 caracteres.")
     private String nome;
 
-    @Size(max = 2000)
+    @Size(max = 2000, message = "Descricao deve ter no maximo 2000 caracteres.")
     private String descricao;
 
-    @NotBlank
-    @Size(max = 100)
+    @NotBlank(message = "Informe o nome do contato.")
+    @Size(max = 100, message = "Nome do contato deve ter no maximo 100 caracteres.")
     private String nomeContato;
 
-    @Size(max = 30)
+    @Size(max = 30, message = "Telefone do contato deve ter no maximo 30 caracteres.")
     private String telefoneContato;
 
-    @Email
-    @Size(max = 255)
+    @Email(message = "Informe um email de contato valido.")
+    @Size(max = 255, message = "Email de contato deve ter no maximo 255 caracteres.")
     private String emailContato;
 
     public EmpresaDTO() {

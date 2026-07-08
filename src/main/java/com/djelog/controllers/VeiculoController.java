@@ -2,6 +2,7 @@ package com.djelog.controllers;
 
 import com.djelog.dtos.VeiculoDTO;
 import com.djelog.dtos.ProfissionalDTO;
+import com.djelog.entities.Profissional;
 import com.djelog.entities.Veiculo;
 import com.djelog.repositories.ProfissionalRepository;
 import com.djelog.repositories.VeiculoRepository;
@@ -10,11 +11,13 @@ import com.djelog.services.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -54,11 +57,16 @@ public class VeiculoController {
     public ResponseEntity<VeiculoDTO> create(@Valid @RequestBody Veiculo veiculo) {
         UUID usuarioId = currentUserService.getCurrentUserId();
         if (veiculo.getProfissional() == null || veiculo.getProfissional().getId() == null) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Selecione um motorista para o veiculo.");
         }
-        if (!profissionalRepository.existsByIdAndUsuario_Id(veiculo.getProfissional().getId(), usuarioId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        Optional<Profissional> profissional = profissionalRepository.findByIdAndUsuario_Id(
+                veiculo.getProfissional().getId(),
+                usuarioId
+        );
+        if (profissional.isEmpty()) {
+            throw new AccessDeniedException("Motorista nao encontrado para este usuario.");
         }
+        veiculo.setProfissional(profissional.get());
         Veiculo saved = veiculoRepository.save(veiculo);
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(saved));
     }
@@ -67,16 +75,20 @@ public class VeiculoController {
     public ResponseEntity<VeiculoDTO> update(@PathVariable("id") UUID id, @Valid @RequestBody Veiculo veiculo) {
         UUID usuarioId = currentUserService.getCurrentUserId();
         if (veiculo.getProfissional() == null || veiculo.getProfissional().getId() == null) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Selecione um motorista para o veiculo.");
         }
-        if (!profissionalRepository.existsByIdAndUsuario_Id(veiculo.getProfissional().getId(), usuarioId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        Optional<Profissional> profissional = profissionalRepository.findByIdAndUsuario_Id(
+                veiculo.getProfissional().getId(),
+                usuarioId
+        );
+        if (profissional.isEmpty()) {
+            throw new AccessDeniedException("Motorista nao encontrado para este usuario.");
         }
         return veiculoRepository.findByIdAndProfissional_Usuario_Id(id, usuarioId)
                 .map(existing -> {
                     existing.setMarca(veiculo.getMarca());
                     existing.setAno(veiculo.getAno());
-                    existing.setProfissional(veiculo.getProfissional());
+                    existing.setProfissional(profissional.get());
                     existing.setPlaca(veiculo.getPlaca());
                     existing.setNome(veiculo.getNome());
                     existing.setQtdPeso(veiculo.getQtdPeso());

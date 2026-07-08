@@ -6,13 +6,13 @@ import jakarta.validation.constraints.Size;
 
 public class UsuarioUpdateDTO {
 
-    @NotBlank
-    @Size(max = 120)
+    @NotBlank(message = "Informe seu nome.")
+    @Size(max = 120, message = "Nome deve ter no maximo 120 caracteres.")
     private String nome;
 
-    @Email
-    @NotBlank
-    @Size(max = 255)
+    @Email(message = "Informe um email valido.")
+    @NotBlank(message = "Informe seu email.")
+    @Size(max = 255, message = "Email deve ter no maximo 255 caracteres.")
     private String email;
 
     public String getNome() {

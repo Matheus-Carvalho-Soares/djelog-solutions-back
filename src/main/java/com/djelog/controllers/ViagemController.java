@@ -5,6 +5,9 @@ import com.djelog.dtos.ViagemRelatorioDTO;
 import com.djelog.dtos.ProfissionalDTO;
 import com.djelog.dtos.EmpresaDTO;
 import com.djelog.dtos.VeiculoDTO;
+import com.djelog.entities.Empresa;
+import com.djelog.entities.Profissional;
+import com.djelog.entities.Veiculo;
 import com.djelog.entities.Viagem;
 import com.djelog.repositories.ViagemRepository;
 import com.djelog.repositories.EmpresaRepository;
@@ -17,12 +20,13 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -61,10 +65,10 @@ public class ViagemController {
             @RequestParam("dataFim") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim
     ) {
         if (dataInicio == null || dataFim == null) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Informe a data inicial e a data final.");
         }
         if (dataInicio.isAfter(dataFim)) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("A data inicial deve ser anterior ou igual a data final.");
         }
         UUID usuarioId = currentUserService.getCurrentUserId();
 
@@ -85,29 +89,33 @@ public class ViagemController {
     public ResponseEntity<ViagemDTO> create(@Valid @RequestBody Viagem viagem) {
         UUID usuarioId = currentUserService.getCurrentUserId();
         
-        // Validate that empresa belongs to the authenticated user
         if (viagem.getEmpresa() == null || viagem.getEmpresa().getId() == null) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Selecione uma empresa para a viagem.");
         }
-        if (!empresaRepository.existsByIdAndUsuario_Id(viagem.getEmpresa().getId(), usuarioId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        Optional<Empresa> empresa = empresaRepository.findByIdAndUsuario_Id(viagem.getEmpresa().getId(), usuarioId);
+        if (empresa.isEmpty()) {
+            throw new AccessDeniedException("Empresa nao encontrada para este usuario.");
         }
         
-        // Validate that profissional belongs to the authenticated user
         if (viagem.getProfissional() == null || viagem.getProfissional().getId() == null) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Selecione um motorista para a viagem.");
         }
-        if (!profissionalRepository.existsByIdAndUsuario_Id(viagem.getProfissional().getId(), usuarioId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        Optional<Profissional> profissional = profissionalRepository.findByIdAndUsuario_Id(viagem.getProfissional().getId(), usuarioId);
+        if (profissional.isEmpty()) {
+            throw new AccessDeniedException("Motorista nao encontrado para este usuario.");
         }
         
-        // Validate that veiculo belongs to the authenticated user
         if (viagem.getVeiculo() == null || viagem.getVeiculo().getId() == null) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Selecione um veiculo para a viagem.");
         }
-        if (!veiculoRepository.existsByIdAndProfissional_Usuario_Id(viagem.getVeiculo().getId(), usuarioId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        Optional<Veiculo> veiculo = veiculoRepository.findByIdAndProfissional_Usuario_Id(viagem.getVeiculo().getId(), usuarioId);
+        if (veiculo.isEmpty()) {
+            throw new AccessDeniedException("Veiculo nao encontrado para este usuario.");
         }
+
+        viagem.setEmpresa(empresa.get());
+        viagem.setProfissional(profissional.get());
+        viagem.setVeiculo(veiculo.get());
         
         Viagem saved = viagemRepository.save(viagem);
         return ResponseEntity.status(HttpStatus.CREATED).body(convertToDTO(saved));
@@ -117,35 +125,35 @@ public class ViagemController {
     public ResponseEntity<ViagemDTO> update(@PathVariable("id") UUID id, @Valid @RequestBody Viagem viagem) {
         UUID usuarioId = currentUserService.getCurrentUserId();
         
-        // Validate that empresa belongs to the authenticated user
         if (viagem.getEmpresa() == null || viagem.getEmpresa().getId() == null) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Selecione uma empresa para a viagem.");
         }
-        if (!empresaRepository.existsByIdAndUsuario_Id(viagem.getEmpresa().getId(), usuarioId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        Optional<Empresa> empresa = empresaRepository.findByIdAndUsuario_Id(viagem.getEmpresa().getId(), usuarioId);
+        if (empresa.isEmpty()) {
+            throw new AccessDeniedException("Empresa nao encontrada para este usuario.");
         }
         
-        // Validate that profissional belongs to the authenticated user
         if (viagem.getProfissional() == null || viagem.getProfissional().getId() == null) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Selecione um motorista para a viagem.");
         }
-        if (!profissionalRepository.existsByIdAndUsuario_Id(viagem.getProfissional().getId(), usuarioId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        Optional<Profissional> profissional = profissionalRepository.findByIdAndUsuario_Id(viagem.getProfissional().getId(), usuarioId);
+        if (profissional.isEmpty()) {
+            throw new AccessDeniedException("Motorista nao encontrado para este usuario.");
         }
         
-        // Validate that veiculo belongs to the authenticated user
         if (viagem.getVeiculo() == null || viagem.getVeiculo().getId() == null) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("Selecione um veiculo para a viagem.");
         }
-        if (!veiculoRepository.existsByIdAndProfissional_Usuario_Id(viagem.getVeiculo().getId(), usuarioId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        Optional<Veiculo> veiculo = veiculoRepository.findByIdAndProfissional_Usuario_Id(viagem.getVeiculo().getId(), usuarioId);
+        if (veiculo.isEmpty()) {
+            throw new AccessDeniedException("Veiculo nao encontrado para este usuario.");
         }
         
         return viagemRepository.findByIdAndProfissional_Usuario_Id(id, usuarioId)
                 .map(existing -> {
-                    existing.setProfissional(viagem.getProfissional());
-                    existing.setEmpresa(viagem.getEmpresa());
-                    existing.setVeiculo(viagem.getVeiculo());
+                    existing.setProfissional(profissional.get());
+                    existing.setEmpresa(empresa.get());
+                    existing.setVeiculo(veiculo.get());
                     existing.setInicioFrete(viagem.getInicioFrete());
                     existing.setFimFrete(viagem.getFimFrete());
                     existing.setValorFrete(viagem.getValorFrete());

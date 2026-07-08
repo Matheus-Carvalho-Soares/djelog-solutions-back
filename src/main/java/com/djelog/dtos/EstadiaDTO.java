@@ -11,14 +11,14 @@ public class EstadiaDTO {
     private UUID id;
 
     @Valid
-    @NotNull
+    @NotNull(message = "Selecione uma viagem para a estadia.")
     private ViagemDTO viagem;
 
-    @Size(max = 2000)
+    @Size(max = 2000, message = "Descricao deve ter no maximo 2000 caracteres.")
     private String descricao;
 
-    @NotNull
-    @Min(0)
+    @NotNull(message = "Informe o valor da estadia.")
+    @Min(value = 0, message = "Valor da estadia deve ser maior ou igual a zero.")
     private Integer valor;
 
     public EstadiaDTO() {
