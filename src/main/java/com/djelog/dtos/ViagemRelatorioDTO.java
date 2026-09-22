@@ -3,12 +3,15 @@ package com.djelog.dtos;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 public class ViagemRelatorioDTO {
+    private UUID viagemId;
     private LocalDateTime dataInicio;
     private LocalDateTime dataFim;
     private String status;
     private String inicioFrete;
+    private String paradaIntermediaria;
     private String fimFrete;
     private BigDecimal valorFrete;
     private BigDecimal totalEstadias;
@@ -119,6 +122,10 @@ public class ViagemRelatorioDTO {
         this.inicioFrete = inicioFrete;
     }
 
+    public String getParadaIntermediaria() { return paradaIntermediaria; }
+
+    public void setParadaIntermediaria(String paradaIntermediaria) { this.paradaIntermediaria = paradaIntermediaria; }
+
     public String getFimFrete() {
         return fimFrete;
     }
@@ -133,6 +140,14 @@ public class ViagemRelatorioDTO {
 
     public void setValorFrete(BigDecimal valorFrete) {
         this.valorFrete = valorFrete;
+    }
+
+    public UUID getViagemId() {
+        return viagemId;
+    }
+
+    public void setViagemId(UUID viagemId) {
+        this.viagemId = viagemId;
     }
 
     public BigDecimal getTotalEstadias() {
@@ -183,7 +198,6 @@ public class ViagemRelatorioDTO {
         return despesas.stream()
                 .map(DespesaDTO::getValor)
                 .filter(valor -> valor != null)
-                .map(BigDecimal::valueOf)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 

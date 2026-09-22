@@ -32,6 +32,9 @@ public class ViagemDTO {
     @Size(max = 120, message = "Fim do frete deve ter no maximo 120 caracteres.")
     private String fimFrete;
 
+    @Size(max = 120, message = "Parada intermediaria deve ter no maximo 120 caracteres.")
+    private String paradaIntermediaria;
+
     @NotNull(message = "Informe o valor do frete.")
     @DecimalMin(value = "0.0", inclusive = false, message = "Valor do frete deve ser maior que zero.")
     private BigDecimal valorFrete;
@@ -97,6 +100,10 @@ public class ViagemDTO {
     public void setFimFrete(String fimFrete) {
         this.fimFrete = fimFrete;
     }
+
+    public String getParadaIntermediaria() { return paradaIntermediaria; }
+
+    public void setParadaIntermediaria(String paradaIntermediaria) { this.paradaIntermediaria = paradaIntermediaria; }
 
     public BigDecimal getValorFrete() {
         return valorFrete;

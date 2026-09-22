@@ -1,11 +1,12 @@
 package com.djelog.dtos;
 
-import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
+import java.math.BigDecimal;
 
 public class DespesaDTO {
     private UUID id;
@@ -21,8 +22,8 @@ public class DespesaDTO {
     private String descricao;
 
     @NotNull(message = "Informe o valor da despesa.")
-    @Min(value = 0, message = "Valor da despesa deve ser maior ou igual a zero.")
-    private Integer valor;
+    @DecimalMin(value = "0.0", message = "Valor da despesa deve ser maior ou igual a zero.")
+    private BigDecimal valor;
 
     public DespesaDTO() {
     }
@@ -59,11 +60,11 @@ public class DespesaDTO {
         this.descricao = descricao;
     }
 
-    public Integer getValor() {
+    public BigDecimal getValor() {
         return valor;
     }
 
-    public void setValor(Integer valor) {
+    public void setValor(BigDecimal valor) {
         this.valor = valor;
     }
 }

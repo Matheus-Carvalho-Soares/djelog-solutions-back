@@ -38,4 +38,33 @@ public interface ViagemRepository extends JpaRepository<Viagem, UUID> {
             @Param("dataInicio") LocalDateTime dataInicio,
             @Param("dataFim") LocalDateTime dataFim
     );
+
+    @Query("""
+            select v
+            from Viagem v
+            join fetch v.profissional p
+            join fetch v.empresa e
+            join fetch v.veiculo ve
+            where p.usuario.id = :usuarioId
+              and v.dataInicio <= :dataFim
+              and (v.dataFim is null or v.dataFim >= :dataInicio)
+              and (:filtraVeiculos = false or ve.id in :veiculoIds)
+              and (:filtraProfissionais = false or p.id in :profissionalIds)
+              and (:filtraEmpresas = false or e.id in :empresaIds)
+              and (:filtraStatus = false or v.status in :status)
+            order by v.dataInicio asc
+            """)
+    List<Viagem> findByPeriodoSobrepostoAndFiltros(
+            @Param("usuarioId") UUID usuarioId,
+            @Param("dataInicio") LocalDateTime dataInicio,
+            @Param("dataFim") LocalDateTime dataFim,
+            @Param("veiculoIds") List<UUID> veiculoIds,
+            @Param("filtraVeiculos") boolean filtraVeiculos,
+            @Param("profissionalIds") List<UUID> profissionalIds,
+            @Param("filtraProfissionais") boolean filtraProfissionais,
+            @Param("empresaIds") List<UUID> empresaIds,
+            @Param("filtraEmpresas") boolean filtraEmpresas,
+            @Param("status") List<String> status,
+            @Param("filtraStatus") boolean filtraStatus
+    );
 }

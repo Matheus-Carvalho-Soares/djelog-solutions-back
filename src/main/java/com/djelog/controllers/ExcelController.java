@@ -1,6 +1,7 @@
 package com.djelog.controllers;
 
 import com.djelog.dtos.ExcelFile;
+import com.djelog.dtos.RelatorioFiltro;
 import com.djelog.services.CurrentUserService;
 import com.djelog.services.ExcelService;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/excel")
@@ -48,10 +50,19 @@ public class ExcelController {
     @GetMapping("/relatorio-por-veiculo")
     public ResponseEntity<byte[]> exportRelatorioPorVeiculo(
             @RequestParam("dataInicio") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
-            @RequestParam("dataFim") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim
+            @RequestParam("dataFim") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim,
+            @RequestParam(value = "veiculoIds", required = false) List<UUID> veiculoIds,
+            @RequestParam(value = "profissionalIds", required = false) List<UUID> profissionalIds,
+            @RequestParam(value = "empresaIds", required = false) List<UUID> empresaIds,
+            @RequestParam(value = "status", required = false) List<String> status,
+            @RequestParam(value = "sortBy", required = false) String sortBy,
+            @RequestParam(value = "sortDirection", required = false) String sortDirection,
+            @RequestParam(value = "busca", required = false) String busca
     ) {
         UUID usuarioId = currentUserService.getCurrentUserId();
-        ExcelFile excelFile = excelService.gerarRelatorioPorVeiculo(usuarioId, dataInicio, dataFim);
+        ExcelFile excelFile = excelService.gerarRelatorioPorVeiculo(usuarioId, new RelatorioFiltro(
+                dataInicio, dataFim, veiculoIds, profissionalIds, empresaIds, status, sortBy, sortDirection, busca
+        ));
 
         return ResponseEntity.ok()
                 .headers(buildDownloadHeaders(excelFile.filename()))
@@ -61,10 +72,19 @@ public class ExcelController {
     @GetMapping("/relatorio-por-profissional")
     public ResponseEntity<byte[]> exportRelatorioPorProfissional(
             @RequestParam("dataInicio") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataInicio,
-            @RequestParam("dataFim") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim
+            @RequestParam("dataFim") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dataFim,
+            @RequestParam(value = "veiculoIds", required = false) List<UUID> veiculoIds,
+            @RequestParam(value = "profissionalIds", required = false) List<UUID> profissionalIds,
+            @RequestParam(value = "empresaIds", required = false) List<UUID> empresaIds,
+            @RequestParam(value = "status", required = false) List<String> status,
+            @RequestParam(value = "sortBy", required = false) String sortBy,
+            @RequestParam(value = "sortDirection", required = false) String sortDirection,
+            @RequestParam(value = "busca", required = false) String busca
     ) {
         UUID usuarioId = currentUserService.getCurrentUserId();
-        ExcelFile excelFile = excelService.gerarRelatorioPorProfissional(usuarioId, dataInicio, dataFim);
+        ExcelFile excelFile = excelService.gerarRelatorioPorProfissional(usuarioId, new RelatorioFiltro(
+                dataInicio, dataFim, veiculoIds, profissionalIds, empresaIds, status, sortBy, sortDirection, busca
+        ));
 
         return ResponseEntity.ok()
                 .headers(buildDownloadHeaders(excelFile.filename()))

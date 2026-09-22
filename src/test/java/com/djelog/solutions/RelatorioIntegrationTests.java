@@ -149,6 +149,45 @@ class RelatorioIntegrationTests {
     }
 
     @Test
+    void relatorioAgrupadoAplicaSituacaoEMostraDetalhePaginado() throws Exception {
+        Usuario usuario = createUser("relatorio-filtros@example.com");
+        Profissional profissional = createProfissional(usuario, "Motorista Filtro");
+        Empresa empresa = createEmpresa(usuario);
+        Veiculo veiculo = createVeiculo(profissional, "FIL1234");
+        Viagem emAndamento = createViagemWithCosts(profissional, empresa, veiculo, 1000, 10, 50, 200);
+        Viagem cancelada = createViagemWithCosts(profissional, empresa, veiculo, 500, 20, 25, 50);
+        cancelada.setStatus("CANCELADA");
+        viagemRepository.save(cancelada);
+
+        mockMvc.perform(get("/api/viagem/excel/dados/por-veiculo")
+                        .header("Authorization", bearerToken(usuario))
+                        .param("dataInicio", "2026-07-01T00:00:00")
+                        .param("dataFim", "2026-07-31T23:59:59")
+                        .param("veiculoIds", veiculo.getId().toString())
+                        .param("status", "EM_ANDAMENTO")
+                        .param("sortBy", "margemLiquidaPercentual")
+                        .param("sortDirection", "desc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].quantidadeViagens").value(1))
+                .andExpect(jsonPath("$[0].receitaMediaPorViagem").value(1200))
+                .andExpect(jsonPath("$[0].margemLiquidaPercentual").value(87.5));
+
+        mockMvc.perform(get("/api/viagem/excel/dados/por-veiculo/" + veiculo.getId() + "/viagens")
+                        .header("Authorization", bearerToken(usuario))
+                        .param("dataInicio", "2026-07-01T00:00:00")
+                        .param("dataFim", "2026-07-31T23:59:59")
+                        .param("status", "EM_ANDAMENTO")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalItems").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].viagemId").value(emAndamento.getId().toString()));
+    }
+
+    @Test
     void relatorioExcelPorVeiculoRetornaXlsxComColunaDeEstadias() throws Exception {
         Usuario usuario = createUser("relatorio-excel@example.com");
         createTripWithCosts(usuario, "ABC1234", "Motorista A", 1000, 10, 50, 200);
@@ -156,7 +195,9 @@ class RelatorioIntegrationTests {
         MvcResult result = mockMvc.perform(get("/api/excel/relatorio-por-veiculo")
                         .header("Authorization", bearerToken(usuario))
                         .param("dataInicio", "2026-07-01T00:00:00")
-                        .param("dataFim", "2026-07-31T23:59:59"))
+                        .param("dataFim", "2026-07-31T23:59:59")
+                        .param("status", "EM_ANDAMENTO")
+                        .param("busca", "ABC"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Type", containsString("spreadsheetml.sheet")))
                 .andExpect(header().string("Content-Disposition", containsString("relatorio-por-veiculo_20260701_20260731.xlsx")))
@@ -166,6 +207,8 @@ class RelatorioIntegrationTests {
             assertThat(workbook.getSheetAt(0).getRow(0).getCell(4).getStringCellValue()).isEqualTo("Estadias");
             assertThat(workbook.getSheetAt(0).getRow(1).getCell(4).getNumericCellValue()).isEqualTo(200.0);
             assertThat(workbook.getSheetAt(0).getRow(1).getCell(5).getNumericCellValue()).isEqualTo(1200.0);
+            assertThat(workbook.getSheetAt(0).getRow(0).getCell(9).getStringCellValue()).isEqualTo("Receita Media por Viagem");
+            assertThat(workbook.getSheetAt(0).getRow(1).getCell(9).getNumericCellValue()).isEqualTo(1200.0);
         }
     }
 
@@ -208,7 +251,7 @@ class RelatorioIntegrationTests {
             despesaEntity.setViagem(viagem);
             despesaEntity.setNome("Pedagio");
             despesaEntity.setDescricao("Despesa da viagem");
-            despesaEntity.setValor(despesa);
+            despesaEntity.setValor(BigDecimal.valueOf(despesa));
             despesaRepository.save(despesaEntity);
         }
 

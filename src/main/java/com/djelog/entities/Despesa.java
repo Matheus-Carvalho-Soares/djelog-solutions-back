@@ -2,6 +2,7 @@ package com.djelog.entities;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
@@ -22,8 +23,8 @@ public class Despesa {
     @Column(columnDefinition = "TEXT")
     private String descricao;
 
-    @Column
-    private Integer valor;
+    @Column(precision = 10, scale = 2)
+    private BigDecimal valor;
 
     public Despesa() {
     }
@@ -60,11 +61,11 @@ public class Despesa {
         this.descricao = descricao;
     }
 
-    public Integer getValor() {
+    public BigDecimal getValor() {
         return valor;
     }
 
-    public void setValor(Integer valor) {
+    public void setValor(BigDecimal valor) {
         this.valor = valor;
     }
 }

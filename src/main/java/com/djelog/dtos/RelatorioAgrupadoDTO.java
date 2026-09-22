@@ -14,6 +14,8 @@ public class RelatorioAgrupadoDTO {
     private BigDecimal comissao;
     private BigDecimal totalDespesas;
     private BigDecimal lucroLiquido;
+    private BigDecimal receitaMediaPorViagem;
+    private BigDecimal margemLiquidaPercentual;
 
     public RelatorioAgrupadoDTO() {
     }
@@ -30,6 +32,36 @@ public class RelatorioAgrupadoDTO {
             BigDecimal totalDespesas,
             BigDecimal lucroLiquido
     ) {
+        this(
+                grupoId,
+                grupoNome,
+                grupoDetalhe,
+                quantidadeViagens,
+                valorFrete,
+                totalEstadias,
+                receitaTotal,
+                comissao,
+                totalDespesas,
+                lucroLiquido,
+                calcularReceitaMedia(receitaTotal, quantidadeViagens),
+                calcularMargem(lucroLiquido, receitaTotal)
+        );
+    }
+
+    public RelatorioAgrupadoDTO(
+            UUID grupoId,
+            String grupoNome,
+            String grupoDetalhe,
+            Integer quantidadeViagens,
+            BigDecimal valorFrete,
+            BigDecimal totalEstadias,
+            BigDecimal receitaTotal,
+            BigDecimal comissao,
+            BigDecimal totalDespesas,
+            BigDecimal lucroLiquido,
+            BigDecimal receitaMediaPorViagem,
+            BigDecimal margemLiquidaPercentual
+    ) {
         this.grupoId = grupoId;
         this.grupoNome = grupoNome;
         this.grupoDetalhe = grupoDetalhe;
@@ -40,6 +72,8 @@ public class RelatorioAgrupadoDTO {
         this.comissao = comissao;
         this.totalDespesas = totalDespesas;
         this.lucroLiquido = lucroLiquido;
+        this.receitaMediaPorViagem = receitaMediaPorViagem;
+        this.margemLiquidaPercentual = margemLiquidaPercentual;
     }
 
     public UUID getGrupoId() {
@@ -120,5 +154,36 @@ public class RelatorioAgrupadoDTO {
 
     public void setLucroLiquido(BigDecimal lucroLiquido) {
         this.lucroLiquido = lucroLiquido;
+    }
+
+    public BigDecimal getReceitaMediaPorViagem() {
+        return receitaMediaPorViagem;
+    }
+
+    public void setReceitaMediaPorViagem(BigDecimal receitaMediaPorViagem) {
+        this.receitaMediaPorViagem = receitaMediaPorViagem;
+    }
+
+    public BigDecimal getMargemLiquidaPercentual() {
+        return margemLiquidaPercentual;
+    }
+
+    public void setMargemLiquidaPercentual(BigDecimal margemLiquidaPercentual) {
+        this.margemLiquidaPercentual = margemLiquidaPercentual;
+    }
+
+    private static BigDecimal calcularReceitaMedia(BigDecimal receitaTotal, Integer quantidadeViagens) {
+        if (receitaTotal == null || quantidadeViagens == null || quantidadeViagens <= 0) {
+            return BigDecimal.ZERO;
+        }
+        return receitaTotal.divide(BigDecimal.valueOf(quantidadeViagens), 2, java.math.RoundingMode.HALF_UP);
+    }
+
+    private static BigDecimal calcularMargem(BigDecimal lucroLiquido, BigDecimal receitaTotal) {
+        if (lucroLiquido == null || receitaTotal == null || receitaTotal.signum() == 0) {
+            return BigDecimal.ZERO;
+        }
+        return lucroLiquido.multiply(BigDecimal.valueOf(100))
+                .divide(receitaTotal, 2, java.math.RoundingMode.HALF_UP);
     }
 }

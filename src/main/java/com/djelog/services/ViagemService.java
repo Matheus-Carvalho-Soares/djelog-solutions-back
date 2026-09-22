@@ -73,6 +73,7 @@ public class ViagemService {
                     existing.setVeiculo(veiculo);
                     existing.setInicioFrete(viagem.getInicioFrete());
                     existing.setFimFrete(viagem.getFimFrete());
+                    existing.setParadaIntermediaria(viagem.getParadaIntermediaria());
                     existing.setValorFrete(viagem.getValorFrete());
                     existing.setComissao(viagem.getComissao());
                     existing.setDataInicio(viagem.getDataInicio());
@@ -124,6 +125,7 @@ public class ViagemService {
         dto.setId(viagem.getId());
         dto.setInicioFrete(viagem.getInicioFrete());
         dto.setFimFrete(viagem.getFimFrete());
+        dto.setParadaIntermediaria(viagem.getParadaIntermediaria());
         dto.setValorFrete(viagem.getValorFrete());
         dto.setComissao(viagem.getComissao());
         dto.setDataInicio(viagem.getDataInicio());

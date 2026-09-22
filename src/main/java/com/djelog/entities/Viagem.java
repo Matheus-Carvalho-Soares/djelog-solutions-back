@@ -39,6 +39,10 @@ public class Viagem {
     @Size(max = 120, message = "Fim do frete deve ter no maximo 120 caracteres.")
     private String fimFrete;
 
+    @Column(name = "parada_intermediaria", length = 120)
+    @Size(max = 120, message = "Parada intermediaria deve ter no maximo 120 caracteres.")
+    private String paradaIntermediaria;
+
     @Column(name = "valor_frete", nullable = false, precision = 10, scale = 2)
     @NotNull(message = "Informe o valor do frete.")
     @DecimalMin(value = "0.0", inclusive = false, message = "Valor do frete deve ser maior que zero.")
@@ -103,6 +107,10 @@ public class Viagem {
     public void setFimFrete(String fimFrete) {
         this.fimFrete = fimFrete;
     }
+
+    public String getParadaIntermediaria() { return paradaIntermediaria; }
+
+    public void setParadaIntermediaria(String paradaIntermediaria) { this.paradaIntermediaria = paradaIntermediaria; }
 
     public BigDecimal getValorFrete() {
         return valorFrete;

@@ -2,6 +2,7 @@ package com.djelog.services;
 
 import com.djelog.dtos.ExcelFile;
 import com.djelog.dtos.RelatorioAgrupadoDTO;
+import com.djelog.dtos.RelatorioFiltro;
 import com.djelog.dtos.ViagemRelatorioDTO;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -28,16 +30,18 @@ public class ExcelService {
     private static final DateTimeFormatter RELATORIO_POR_DATA_DISPLAY_DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final String[] RELATORIO_POR_DATA_HEADERS = {
             "Data Inicio", "Data Fim", "Status", "Profissional", "Empresa",
-            "Veiculo Marca", "Veiculo Placa", "Origem Frete", "Destino Frete",
+            "Veiculo Marca", "Veiculo Placa", "Origem Frete", "Parada Intermediaria", "Destino Frete",
             "Valor Frete", "Estadias", "Receita Total", "Comissao", "Total Despesas", "Lucro Liquido"
     };
     private static final String[] RELATORIO_POR_VEICULO_HEADERS = {
             "Veiculo", "Detalhe", "Qtd Viagens", "Valor Frete", "Estadias",
-            "Receita Total", "Comissao", "Total Despesas", "Lucro Liquido"
+            "Receita Total", "Comissao", "Total Despesas", "Lucro Liquido",
+            "Receita Media por Viagem", "Margem Liquida (%)"
     };
     private static final String[] RELATORIO_POR_PROFISSIONAL_HEADERS = {
             "Profissional", "Detalhe", "Qtd Viagens", "Valor Frete", "Estadias",
-            "Receita Total", "Comissao", "Total Despesas", "Lucro Liquido"
+            "Receita Total", "Comissao", "Total Despesas", "Lucro Liquido",
+            "Receita Media por Viagem", "Margem Liquida (%)"
     };
 
     private final RelatorioService relatorioService;
@@ -55,17 +59,29 @@ public class ExcelService {
     }
 
     public ExcelFile gerarRelatorioPorVeiculo(UUID usuarioId, LocalDateTime dataInicio, LocalDateTime dataFim) {
-        List<RelatorioAgrupadoDTO> dados = relatorioService.findFaturamentoPorVeiculo(usuarioId, dataInicio, dataFim);
+        return gerarRelatorioPorVeiculo(usuarioId, new RelatorioFiltro(
+                dataInicio, dataFim, List.of(), List.of(), List.of(), List.of(), "receitaTotal", "desc"
+        ));
+    }
+
+    public ExcelFile gerarRelatorioPorVeiculo(UUID usuarioId, RelatorioFiltro filtro) {
+        List<RelatorioAgrupadoDTO> dados = relatorioService.findFaturamentoPorVeiculo(usuarioId, filtro);
         return new ExcelFile(
-                buildRelatorioPorVeiculoFilename(dataInicio, dataFim),
+                buildRelatorioPorVeiculoFilename(filtro.dataInicio(), filtro.dataFim()),
                 buildRelatorioPorVeiculoWorkbook(dados)
         );
     }
 
     public ExcelFile gerarRelatorioPorProfissional(UUID usuarioId, LocalDateTime dataInicio, LocalDateTime dataFim) {
-        List<RelatorioAgrupadoDTO> dados = relatorioService.findFaturamentoPorProfissional(usuarioId, dataInicio, dataFim);
+        return gerarRelatorioPorProfissional(usuarioId, new RelatorioFiltro(
+                dataInicio, dataFim, List.of(), List.of(), List.of(), List.of(), "lucroLiquido", "desc"
+        ));
+    }
+
+    public ExcelFile gerarRelatorioPorProfissional(UUID usuarioId, RelatorioFiltro filtro) {
+        List<RelatorioAgrupadoDTO> dados = relatorioService.findFaturamentoPorProfissional(usuarioId, filtro);
         return new ExcelFile(
-                buildRelatorioPorProfissionalFilename(dataInicio, dataFim),
+                buildRelatorioPorProfissionalFilename(filtro.dataInicio(), filtro.dataFim()),
                 buildRelatorioPorProfissionalWorkbook(dados)
         );
     }
@@ -90,9 +106,10 @@ public class ExcelService {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Por Veiculo");
             CellStyle relatorioPorVeiculoMoneyStyle = createMoneyStyle(workbook);
+            CellStyle relatorioPorVeiculoPercentageStyle = createPercentageStyle(workbook);
 
             writeRelatorioPorVeiculoHeader(sheet);
-            writeRelatorioPorVeiculoRows(sheet, dados, relatorioPorVeiculoMoneyStyle);
+            writeRelatorioPorVeiculoRows(sheet, dados, relatorioPorVeiculoMoneyStyle, relatorioPorVeiculoPercentageStyle);
             autoSizeRelatorioPorVeiculoColumns(sheet);
 
             workbook.write(outputStream);
@@ -106,9 +123,10 @@ public class ExcelService {
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
             Sheet sheet = workbook.createSheet("Por Profissional");
             CellStyle relatorioPorProfissionalMoneyStyle = createMoneyStyle(workbook);
+            CellStyle relatorioPorProfissionalPercentageStyle = createPercentageStyle(workbook);
 
             writeRelatorioPorProfissionalHeader(sheet);
-            writeRelatorioPorProfissionalRows(sheet, dados, relatorioPorProfissionalMoneyStyle);
+            writeRelatorioPorProfissionalRows(sheet, dados, relatorioPorProfissionalMoneyStyle, relatorioPorProfissionalPercentageStyle);
             autoSizeRelatorioPorProfissionalColumns(sheet);
 
             workbook.write(outputStream);
@@ -123,6 +141,13 @@ public class ExcelService {
         CellStyle moneyStyle = workbook.createCellStyle();
         moneyStyle.setDataFormat(creationHelper.createDataFormat().getFormat("#,##0.00"));
         return moneyStyle;
+    }
+
+    private CellStyle createPercentageStyle(Workbook workbook) {
+        CreationHelper creationHelper = workbook.getCreationHelper();
+        CellStyle percentageStyle = workbook.createCellStyle();
+        percentageStyle.setDataFormat(creationHelper.createDataFormat().getFormat("#,##0.00\"%\""));
+        return percentageStyle;
     }
 
     private void writeRelatorioPorDataHeader(Sheet sheet) {
@@ -185,23 +210,26 @@ public class ExcelService {
     private void writeRelatorioPorVeiculoRows(
             Sheet sheet,
             List<RelatorioAgrupadoDTO> dados,
-            CellStyle relatorioPorVeiculoMoneyStyle
+            CellStyle relatorioPorVeiculoMoneyStyle,
+            CellStyle relatorioPorVeiculoPercentageStyle
     ) {
-        writeRelatorioAgrupadoRows(sheet, dados, relatorioPorVeiculoMoneyStyle);
+        writeRelatorioAgrupadoRows(sheet, dados, relatorioPorVeiculoMoneyStyle, relatorioPorVeiculoPercentageStyle);
     }
 
     private void writeRelatorioPorProfissionalRows(
             Sheet sheet,
             List<RelatorioAgrupadoDTO> dados,
-            CellStyle relatorioPorProfissionalMoneyStyle
+            CellStyle relatorioPorProfissionalMoneyStyle,
+            CellStyle relatorioPorProfissionalPercentageStyle
     ) {
-        writeRelatorioAgrupadoRows(sheet, dados, relatorioPorProfissionalMoneyStyle);
+        writeRelatorioAgrupadoRows(sheet, dados, relatorioPorProfissionalMoneyStyle, relatorioPorProfissionalPercentageStyle);
     }
 
     private void writeRelatorioAgrupadoRows(
             Sheet sheet,
             List<RelatorioAgrupadoDTO> dados,
-            CellStyle moneyStyle
+            CellStyle moneyStyle,
+            CellStyle percentageStyle
     ) {
         int totalQuantidade = 0;
         BigDecimal totalFrete = BigDecimal.ZERO;
@@ -214,7 +242,7 @@ public class ExcelService {
         int rowIndex = 1;
         for (RelatorioAgrupadoDTO item : dados) {
             Row row = sheet.createRow(rowIndex++);
-            writeRelatorioAgrupadoItemRow(row, item, moneyStyle);
+            writeRelatorioAgrupadoItemRow(row, item, moneyStyle, percentageStyle);
 
             totalQuantidade += item.getQuantidadeViagens() == null ? 0 : item.getQuantidadeViagens();
             totalFrete = totalFrete.add(defaultZero(item.getValorFrete()));
@@ -235,7 +263,8 @@ public class ExcelService {
                 totalComissao,
                 totalDespesas,
                 totalLucro,
-                moneyStyle
+                moneyStyle,
+                percentageStyle
         );
     }
 
@@ -252,19 +281,21 @@ public class ExcelService {
         writeTextCell(row, 5, item.getVeiculoMarca());
         writeTextCell(row, 6, item.getVeiculoPlaca());
         writeTextCell(row, 7, item.getInicioFrete());
-        writeTextCell(row, 8, item.getFimFrete());
-        writeMoneyCell(row, 9, item.getValorFrete(), relatorioPorDataMoneyStyle);
-        writeMoneyCell(row, 10, item.getTotalEstadias(), relatorioPorDataMoneyStyle);
-        writeMoneyCell(row, 11, item.getReceitaTotal(), relatorioPorDataMoneyStyle);
-        writeMoneyCell(row, 12, item.getComissao(), relatorioPorDataMoneyStyle);
-        writeMoneyCell(row, 13, item.getTotalDespesas(), relatorioPorDataMoneyStyle);
-        writeMoneyCell(row, 14, item.getLucroLiquido(), relatorioPorDataMoneyStyle);
+        writeTextCell(row, 8, item.getParadaIntermediaria());
+        writeTextCell(row, 9, item.getFimFrete());
+        writeMoneyCell(row, 10, item.getValorFrete(), relatorioPorDataMoneyStyle);
+        writeMoneyCell(row, 11, item.getTotalEstadias(), relatorioPorDataMoneyStyle);
+        writeMoneyCell(row, 12, item.getReceitaTotal(), relatorioPorDataMoneyStyle);
+        writeMoneyCell(row, 13, item.getComissao(), relatorioPorDataMoneyStyle);
+        writeMoneyCell(row, 14, item.getTotalDespesas(), relatorioPorDataMoneyStyle);
+        writeMoneyCell(row, 15, item.getLucroLiquido(), relatorioPorDataMoneyStyle);
     }
 
     private void writeRelatorioAgrupadoItemRow(
             Row row,
             RelatorioAgrupadoDTO item,
-            CellStyle moneyStyle
+            CellStyle moneyStyle,
+            CellStyle percentageStyle
     ) {
         writeTextCell(row, 0, item.getGrupoNome());
         writeTextCell(row, 1, item.getGrupoDetalhe());
@@ -275,6 +306,8 @@ public class ExcelService {
         writeMoneyCell(row, 6, item.getComissao(), moneyStyle);
         writeMoneyCell(row, 7, item.getTotalDespesas(), moneyStyle);
         writeMoneyCell(row, 8, item.getLucroLiquido(), moneyStyle);
+        writeMoneyCell(row, 9, item.getReceitaMediaPorViagem(), moneyStyle);
+        writePercentageCell(row, 10, item.getMargemLiquidaPercentual(), percentageStyle);
     }
 
     private void writeRelatorioPorDataTotalRow(
@@ -305,7 +338,8 @@ public class ExcelService {
             BigDecimal totalComissao,
             BigDecimal totalDespesas,
             BigDecimal totalLucro,
-            CellStyle moneyStyle
+            CellStyle moneyStyle,
+            CellStyle percentageStyle
     ) {
         writeTextCell(totalRow, 1, "TOTAIS");
         writeIntegerCell(totalRow, 2, totalQuantidade);
@@ -315,6 +349,8 @@ public class ExcelService {
         writeMoneyCell(totalRow, 6, totalComissao, moneyStyle);
         writeMoneyCell(totalRow, 7, totalDespesas, moneyStyle);
         writeMoneyCell(totalRow, 8, totalLucro, moneyStyle);
+        writeMoneyCell(totalRow, 9, calculateAverage(totalReceita, totalQuantidade), moneyStyle);
+        writePercentageCell(totalRow, 10, calculateMargin(totalLucro, totalReceita), percentageStyle);
     }
 
     private void autoSizeRelatorioPorDataColumns(Sheet sheet) {
@@ -375,6 +411,25 @@ public class ExcelService {
         Cell cell = row.createCell(column);
         cell.setCellValue(defaultZero(value).doubleValue());
         cell.setCellStyle(style);
+    }
+
+    private void writePercentageCell(Row row, int column, BigDecimal value, CellStyle style) {
+        Cell cell = row.createCell(column);
+        cell.setCellValue(defaultZero(value).doubleValue());
+        cell.setCellStyle(style);
+    }
+
+    private BigDecimal calculateAverage(BigDecimal total, int quantity) {
+        return quantity <= 0 ? BigDecimal.ZERO : defaultZero(total)
+                .divide(BigDecimal.valueOf(quantity), 2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal calculateMargin(BigDecimal profit, BigDecimal revenue) {
+        if (revenue == null || revenue.signum() == 0) {
+            return BigDecimal.ZERO;
+        }
+        return defaultZero(profit).multiply(BigDecimal.valueOf(100))
+                .divide(revenue, 2, RoundingMode.HALF_UP);
     }
 
     private BigDecimal defaultZero(BigDecimal value) {
