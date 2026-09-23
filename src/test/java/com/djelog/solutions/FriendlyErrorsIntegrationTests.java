@@ -28,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -178,23 +179,27 @@ class FriendlyErrorsIntegrationTests {
     }
 
     @Test
-    void viagemReturnsFriendlyMessageWhenEmpresaIsMissing() throws Exception {
+    void viagemCanBeCreatedWithoutEmpresa() throws Exception {
         Usuario usuario = createUser("viagem@example.com", "SenhaAtual123");
+        Profissional profissional = createProfissional(usuario);
+        Veiculo veiculo = createVeiculo(profissional);
 
         mockMvc.perform(post("/api/viagem")
                         .header("Authorization", bearerToken(usuario))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
+                                  "profissional": { "id": "%s" },
+                                  "veiculo": { "id": "%s" },
                                   "inicioFrete": "Origem",
                                   "valorFrete": 1000.00,
                                   "dataInicio": "2026-07-05T10:00:00",
                                   "status": "EM_ANDAMENTO"
                                 }
-                                """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Selecione uma empresa para a viagem."))
-                .andExpect(jsonPath("$.status").value(400));
+                                """.formatted(profissional.getId(), veiculo.getId())))
+                .andExpect(status().isCreated());
+
+        assertThat(viagemRepository.findByProfissional_Usuario_Id(usuario.getId()).getFirst().getEmpresa()).isNull();
     }
 
     @Test

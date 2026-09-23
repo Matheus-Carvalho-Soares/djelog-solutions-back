@@ -26,7 +26,7 @@ public interface ViagemRepository extends JpaRepository<Viagem, UUID> {
             select v
             from Viagem v
             join fetch v.profissional p
-            join fetch v.empresa e
+            left join fetch v.empresa e
             join fetch v.veiculo ve
             where p.usuario.id = :usuarioId
               and v.dataInicio <= :dataFim
@@ -43,7 +43,7 @@ public interface ViagemRepository extends JpaRepository<Viagem, UUID> {
             select v
             from Viagem v
             join fetch v.profissional p
-            join fetch v.empresa e
+            left join fetch v.empresa e
             join fetch v.veiculo ve
             where p.usuario.id = :usuarioId
               and v.dataInicio <= :dataFim

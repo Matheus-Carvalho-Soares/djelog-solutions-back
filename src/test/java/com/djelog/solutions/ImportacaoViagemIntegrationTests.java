@@ -162,23 +162,25 @@ class ImportacaoViagemIntegrationTests {
     }
 
     @Test
-    void blankTransportadoraStaysBlockedUntilTheUserSelectsAnExistingCompany() throws Exception {
+    void blankTransportadoraCanBeImportedWithoutAnEmpresa() throws Exception {
         Usuario owner = createUser("import-company@example.com");
         Catalog catalog = createCatalog(owner);
         String token = token(owner);
         ImportacaoViagemDTO batch = preview(token, workbook(1, true));
         ImportacaoLinhaDTO row = batch.linhas().getFirst();
-        assertThat(row.situacao()).isEqualTo("SEM_VINCULO");
-        assertThat(row.selecionada()).isFalse();
+        assertThat(row.situacao()).isEqualTo("NOVA");
+        assertThat(row.selecionada()).isTrue();
         assertThat(row.empresaId()).isNull();
+        assertThat(row.avisos()).anyMatch(warning -> warning.contains("Empresa não informada"));
 
         ConfirmacaoLinhaImportacaoDTO decision = new ConfirmacaoLinhaImportacaoDTO(
-                row.id(), true, row.veiculoId(), row.profissionalId(), catalog.empresa().getId(), "CONCLUIDA");
+                row.id(), true, row.veiculoId(), row.profissionalId(), null, "CONCLUIDA");
         mockMvc.perform(post("/api/viagem/importacoes/" + batch.id() + "/confirmar")
                         .header("Authorization", token).contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new ConfirmacaoImportacaoDTO(false, List.of(decision)))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.criadas").value(1));
-        assertThat(empresaRepository.count()).isEqualTo(1);
+        Viagem viagem = viagemRepository.findByProfissional_Usuario_Id(catalog.profissional().getUsuario().getId()).getFirst();
+        assertThat(viagem.getEmpresa()).isNull();
     }
 
     private ImportacaoViagemDTO preview(String token, MockMultipartFile file) throws Exception {

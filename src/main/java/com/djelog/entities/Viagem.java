@@ -23,7 +23,7 @@ public class Viagem {
     private Profissional profissional;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_empresa", referencedColumnName = "id", nullable = false, foreignKey = @ForeignKey(name = "fk_viagem_empresa"))
+    @JoinColumn(name = "id_empresa", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_viagem_empresa"))
     private Empresa empresa;
 
     @ManyToOne(fetch = FetchType.LAZY)

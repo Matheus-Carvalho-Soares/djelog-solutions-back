@@ -98,7 +98,7 @@ public class ViagemService {
 
     private Empresa resolveEmpresa(Viagem viagem, UUID usuarioId) {
         if (viagem.getEmpresa() == null || viagem.getEmpresa().getId() == null) {
-            throw new IllegalArgumentException("Selecione uma empresa para a viagem.");
+            return null;
         }
         return empresaRepository.findByIdAndUsuario_Id(viagem.getEmpresa().getId(), usuarioId)
                 .orElseThrow(() -> new AccessDeniedException("Empresa nao encontrada para este usuario."));

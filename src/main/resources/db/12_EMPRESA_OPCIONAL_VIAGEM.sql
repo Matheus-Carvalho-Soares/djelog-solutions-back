@@ -1,0 +1,2 @@
+ALTER TABLE viagem
+    ALTER COLUMN id_empresa DROP NOT NULL;

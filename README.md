@@ -164,7 +164,7 @@ spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
 spring.jpa.hibernate.ddl-auto=validate
 ```
 
-O Hibernate está configurado para atualizar o schema automaticamente por padrão, mas em produção as alterações devem ser aplicadas pelos scripts SQL versionados antes de usar a funcionalidade correspondente; use `ddl-auto=validate` após a migração. A pasta `src/main/resources/db` contém scripts SQL históricos/evolutivos. Para a importação incremental de viagens, aplique `11_importacao_incremental_viagem.sql` no PostgreSQL: ele adiciona a parada intermediária, preserva centavos em despesas e cria o staging privado dos lotes e linhas.
+O Hibernate está configurado para atualizar o schema automaticamente por padrão, mas em produção as alterações devem ser aplicadas pelos scripts SQL versionados antes de usar a funcionalidade correspondente; use `ddl-auto=validate` após a migração. A pasta `src/main/resources/db` contém scripts SQL históricos/evolutivos. Para a importação incremental de viagens, aplique `11_importacao_incremental_viagem.sql` no PostgreSQL: ele adiciona a parada intermediária, preserva centavos em despesas e cria o staging privado dos lotes e linhas. Para permitir viagens sem empresa vinculada, aplique também `12_EMPRESA_OPCIONAL_VIAGEM.sql`.
 
 ## 🔐 Autenticação e Segurança
 

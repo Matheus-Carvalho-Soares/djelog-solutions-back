@@ -18,7 +18,6 @@ public class ViagemDTO {
     private ProfissionalDTO profissional;
 
     @Valid
-    @NotNull(message = "Selecione uma empresa para a viagem.")
     private EmpresaDTO empresa;
 
     @Valid

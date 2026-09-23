@@ -83,16 +83,19 @@ public class ImportacaoViagemService {
                     if (vehicle.getProfissional() != null) row.setProfissionalId(vehicle.getProfissional().getId());
                 }
                 if (company != null) row.setEmpresaId(company.getId());
+                else {
+                    String warning = source.company() == null || source.company().isBlank()
+                            ? "Empresa não informada; a viagem será importada sem esse vínculo."
+                            : companyMatches.size() > 1
+                                ? "Mais de uma empresa corresponde ao nome da planilha; selecione uma ou importe sem empresa."
+                                : "Empresa sem correspondência no cadastro; selecione uma ou importe sem empresa.";
+                    addWarning(row, warning);
+                }
                 List<String> reasons = new ArrayList<>();
                 if (vehicle == null) reasons.add(vehicleMatches.size() > 1
                         ? "A placa corresponde a mais de um veículo; selecione o correto."
                         : "Veículo não encontrado pela placa; selecione um veículo.");
                 if (row.getProfissionalId() == null) reasons.add("Motorista não definido pelo veículo; selecione um motorista.");
-                if (company == null) reasons.add(source.company() == null
-                        ? "Transportadora vazia; escolha uma empresa existente."
-                        : companyMatches.size() > 1
-                            ? "Mais de uma empresa tem esse nome; escolha a correta."
-                            : "Transportadora sem correspondência; escolha uma empresa existente.");
                 if (!reasons.isEmpty()) {
                     row.setSituacao("SEM_VINCULO");
                     row.setMotivo(String.join(" ", reasons));
@@ -150,15 +153,15 @@ public class ImportacaoViagemService {
             row.setSelecionada(decision.incluir());
             if (decision.veiculoId() != null) row.setVeiculoId(decision.veiculoId());
             if (decision.profissionalId() != null) row.setProfissionalId(decision.profissionalId());
-            if (decision.empresaId() != null) row.setEmpresaId(decision.empresaId());
+            row.setEmpresaId(decision.empresaId());
             if (decision.status() != null && !decision.status().isBlank()) row.setStatusViagem(decision.status());
         }
         List<ImportacaoViagemLinha> selected = rows.stream().filter(ImportacaoViagemLinha::isSelecionada).toList();
         if (selected.stream().anyMatch(row -> "DADO_INVALIDO".equals(row.getSituacao()))) {
             throw new IllegalArgumentException("Corrija os dados inválidos ou desmarque essas linhas.");
         }
-        if (selected.stream().anyMatch(row -> row.getVeiculoId() == null || row.getProfissionalId() == null || row.getEmpresaId() == null)) {
-            throw new IllegalArgumentException("Resolva os vínculos de veículo, motorista e empresa nas linhas selecionadas.");
+        if (selected.stream().anyMatch(row -> row.getVeiculoId() == null || row.getProfissionalId() == null)) {
+            throw new IllegalArgumentException("Resolva os vínculos de veículo e motorista nas linhas selecionadas.");
         }
         if (selected.stream().anyMatch(row -> row.getStatusViagem() != null && !STATUSES.contains(row.getStatusViagem()))) {
             throw new IllegalArgumentException("O status de uma viagem é inválido.");
@@ -184,7 +187,7 @@ public class ImportacaoViagemService {
             Veiculo vehicle = vehicles.get(row.getVeiculoId());
             Profissional driver = drivers.get(row.getProfissionalId());
             Empresa company = companies.get(row.getEmpresaId());
-            if (vehicle == null || driver == null || company == null) {
+            if (vehicle == null || driver == null || (row.getEmpresaId() != null && company == null)) {
                 throw new AccessDeniedException("Um vínculo selecionado não pertence a este usuário.");
             }
             if (row.getDataViagem() == null || row.getInicioFrete() == null || row.getValorFrete() == null) {
@@ -290,7 +293,8 @@ public class ImportacaoViagemService {
             if (source.getProfissionalId() != null && source.getProfissionalId().equals(trip.getProfissional().getId())) { score += 15; matches.add("motorista"); }
             if (routeKey(source.getInicioFrete(), source.getParadaIntermediaria(), source.getFimFrete())
                     .equals(routeKey(trip.getInicioFrete(), trip.getParadaIntermediaria(), trip.getFimFrete()))) { score += 15; matches.add("rota"); }
-            if (source.getEmpresaId() != null && source.getEmpresaId().equals(trip.getEmpresa().getId())) { score += 10; matches.add("empresa"); }
+            if (source.getEmpresaId() != null && trip.getEmpresa() != null
+                    && source.getEmpresaId().equals(trip.getEmpresa().getId())) { score += 10; matches.add("empresa"); }
             if (sameAmounts(source, trip, expenses.getOrDefault(trip.getId(), List.of()))) { score += 5; matches.add("valores/despesas"); }
             String plate = trip.getVeiculo() == null ? null : trip.getVeiculo().getPlaca();
             String driver = trip.getProfissional() == null ? null : trip.getProfissional().getNome();
@@ -373,6 +377,11 @@ public class ImportacaoViagemService {
     private String companyKey(String name) { return ControleViagensVolvoParser.normalize(name); }
     private BigDecimal zero(BigDecimal value) { return value == null ? BigDecimal.ZERO : value; }
     private String decimal(BigDecimal value) { return value == null ? "-" : value.stripTrailingZeros().toPlainString(); }
+    private void addWarning(ImportacaoViagemLinha row, String warning) {
+        String current = row.getAvisos();
+        row.setAvisos(current == null || current.isBlank() ? warning : current + "\n" + warning);
+    }
+
     private String digest(String value) {
         try { return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8))); }
         catch (Exception e) { throw new IllegalStateException(e); }
