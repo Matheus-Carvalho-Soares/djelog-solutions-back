@@ -183,9 +183,10 @@ Authorization: Bearer <token>
 As origens permitidas atualmente são:
 
 - `http://localhost:4200`
+- `https://djelog-web.netlify.app` (domínio legado)
 - `https://djelogweb.netlify.app`
 
-Caso o frontend seja publicado em outro domínio, adicione a nova origem em `SecurityConfig`.
+No Render, mantenha essas origens na variável `APP_CORS_ALLOWED_ORIGINS`, separadas por vírgula. Caso o frontend seja publicado em outro domínio, inclua sua origem exata nessa variável.
 
 ## 🧭 Endpoints Principais
 
