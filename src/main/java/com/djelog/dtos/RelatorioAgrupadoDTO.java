@@ -9,7 +9,6 @@ public class RelatorioAgrupadoDTO {
     private String grupoDetalhe;
     private Integer quantidadeViagens;
     private BigDecimal valorFrete;
-    private BigDecimal totalEstadias;
     private BigDecimal receitaTotal;
     private BigDecimal comissao;
     private BigDecimal totalDespesas;
@@ -26,7 +25,6 @@ public class RelatorioAgrupadoDTO {
             String grupoDetalhe,
             Integer quantidadeViagens,
             BigDecimal valorFrete,
-            BigDecimal totalEstadias,
             BigDecimal receitaTotal,
             BigDecimal comissao,
             BigDecimal totalDespesas,
@@ -38,7 +36,6 @@ public class RelatorioAgrupadoDTO {
                 grupoDetalhe,
                 quantidadeViagens,
                 valorFrete,
-                totalEstadias,
                 receitaTotal,
                 comissao,
                 totalDespesas,
@@ -54,7 +51,6 @@ public class RelatorioAgrupadoDTO {
             String grupoDetalhe,
             Integer quantidadeViagens,
             BigDecimal valorFrete,
-            BigDecimal totalEstadias,
             BigDecimal receitaTotal,
             BigDecimal comissao,
             BigDecimal totalDespesas,
@@ -67,7 +63,6 @@ public class RelatorioAgrupadoDTO {
         this.grupoDetalhe = grupoDetalhe;
         this.quantidadeViagens = quantidadeViagens;
         this.valorFrete = valorFrete;
-        this.totalEstadias = totalEstadias;
         this.receitaTotal = receitaTotal;
         this.comissao = comissao;
         this.totalDespesas = totalDespesas;
@@ -114,14 +109,6 @@ public class RelatorioAgrupadoDTO {
 
     public void setValorFrete(BigDecimal valorFrete) {
         this.valorFrete = valorFrete;
-    }
-
-    public BigDecimal getTotalEstadias() {
-        return totalEstadias;
-    }
-
-    public void setTotalEstadias(BigDecimal totalEstadias) {
-        this.totalEstadias = totalEstadias;
     }
 
     public BigDecimal getReceitaTotal() {

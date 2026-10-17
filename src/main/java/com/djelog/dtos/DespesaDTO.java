@@ -6,13 +6,16 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.UUID;
+import java.util.List;
+import java.time.LocalDate;
 import java.math.BigDecimal;
 
 public class DespesaDTO {
     private UUID id;
 
-    @NotNull(message = "Selecione uma viagem para a despesa.")
     private ViagemDTO viagem;
+
+    private VeiculoDTO veiculo;
 
     @NotBlank(message = "Informe o nome da despesa.")
     @Size(max = 100, message = "Nome da despesa deve ter no maximo 100 caracteres.")
@@ -24,6 +27,12 @@ public class DespesaDTO {
     @NotNull(message = "Informe o valor da despesa.")
     @DecimalMin(value = "0.0", message = "Valor da despesa deve ser maior ou igual a zero.")
     private BigDecimal valor;
+
+    private String categoria;
+    private List<ParcelaDespesaDTO> parcelas;
+    private LocalDate dataVencimento;
+    private String statusPagamento;
+    private LocalDate dataPagamento;
 
     public DespesaDTO() {
     }
@@ -43,6 +52,9 @@ public class DespesaDTO {
     public void setViagem(ViagemDTO viagem) {
         this.viagem = viagem;
     }
+
+    public VeiculoDTO getVeiculo() { return veiculo; }
+    public void setVeiculo(VeiculoDTO veiculo) { this.veiculo = veiculo; }
 
     public String getNome() {
         return nome;
@@ -67,4 +79,15 @@ public class DespesaDTO {
     public void setValor(BigDecimal valor) {
         this.valor = valor;
     }
+
+    public String getCategoria() { return categoria; }
+    public void setCategoria(String categoria) { this.categoria = categoria; }
+    public List<ParcelaDespesaDTO> getParcelas() { return parcelas; }
+    public void setParcelas(List<ParcelaDespesaDTO> parcelas) { this.parcelas = parcelas; }
+    public LocalDate getDataVencimento() { return dataVencimento; }
+    public void setDataVencimento(LocalDate dataVencimento) { this.dataVencimento = dataVencimento; }
+    public String getStatusPagamento() { return statusPagamento; }
+    public void setStatusPagamento(String statusPagamento) { this.statusPagamento = statusPagamento; }
+    public LocalDate getDataPagamento() { return dataPagamento; }
+    public void setDataPagamento(LocalDate dataPagamento) { this.dataPagamento = dataPagamento; }
 }

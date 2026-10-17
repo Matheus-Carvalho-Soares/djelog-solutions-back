@@ -7,6 +7,7 @@ import com.djelog.dtos.ConfirmacaoImportacaoDTO;
 import com.djelog.dtos.ImportacaoViagemDTO;
 import com.djelog.dtos.ResultadoImportacaoDTO;
 import com.djelog.dtos.ViagemDTO;
+import com.djelog.dtos.ViagemCreateRequestDTO;
 import com.djelog.dtos.ViagemRelatorioDTO;
 import com.djelog.entities.Viagem;
 import com.djelog.services.CurrentUserService;
@@ -183,8 +184,8 @@ public class ViagemController {
     }
 
     @PostMapping
-    public ResponseEntity<ViagemDTO> create(@Valid @RequestBody Viagem viagem) {
-        ViagemDTO created = viagemService.create(viagem, currentUserService.getCurrentUserId());
+    public ResponseEntity<ViagemDTO> create(@Valid @RequestBody ViagemCreateRequestDTO request) {
+        ViagemDTO created = viagemService.create(request, currentUserService.getCurrentUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 

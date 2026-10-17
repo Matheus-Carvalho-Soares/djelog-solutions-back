@@ -14,7 +14,6 @@ public class ViagemRelatorioDTO {
     private String paradaIntermediaria;
     private String fimFrete;
     private BigDecimal valorFrete;
-    private BigDecimal totalEstadias;
     private BigDecimal receitaTotal;
     private BigDecimal comissao;
     private List<DespesaDTO> despesas;
@@ -39,48 +38,13 @@ public class ViagemRelatorioDTO {
             String veiculoMarca,
             String veiculoPlaca
     ) {
-        this(
-                dataInicio,
-                dataFim,
-                status,
-                inicioFrete,
-                fimFrete,
-                valorFrete,
-                BigDecimal.ZERO,
-                valorFrete,
-                comissao,
-                despesas,
-                profissionalNome,
-                empresaNome,
-                veiculoMarca,
-                veiculoPlaca
-        );
-    }
-
-    public ViagemRelatorioDTO(
-            LocalDateTime dataInicio,
-            LocalDateTime dataFim,
-            String status,
-            String inicioFrete,
-            String fimFrete,
-            BigDecimal valorFrete,
-            BigDecimal totalEstadias,
-            BigDecimal receitaTotal,
-            BigDecimal comissao,
-            List<DespesaDTO> despesas,
-            String profissionalNome,
-            String empresaNome,
-            String veiculoMarca,
-            String veiculoPlaca
-    ) {
         this.dataInicio = dataInicio;
         this.dataFim = dataFim;
         this.status = status;
         this.inicioFrete = inicioFrete;
         this.fimFrete = fimFrete;
         this.valorFrete = valorFrete;
-        this.totalEstadias = defaultZero(totalEstadias);
-        this.receitaTotal = defaultZero(receitaTotal);
+        this.receitaTotal = defaultZero(valorFrete);
         this.comissao = comissao;
         this.despesas = despesas;
         this.totalDespesas = calcularTotalDespesas(despesas);
@@ -148,14 +112,6 @@ public class ViagemRelatorioDTO {
 
     public void setViagemId(UUID viagemId) {
         this.viagemId = viagemId;
-    }
-
-    public BigDecimal getTotalEstadias() {
-        return totalEstadias;
-    }
-
-    public void setTotalEstadias(BigDecimal totalEstadias) {
-        this.totalEstadias = totalEstadias;
     }
 
     public BigDecimal getReceitaTotal() {

@@ -14,8 +14,16 @@ public class Despesa {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_viagem", referencedColumnName = "id", nullable = false, foreignKey = @ForeignKey(name = "fk_despesas_viagem"))
+    @JoinColumn(name = "id_viagem", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_despesas_viagem"))
     private Viagem viagem;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_despesas_usuario"))
+    private Usuario usuario;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_veiculo", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_despesas_veiculo"))
+    private Veiculo veiculo;
 
     @Column(length = 100)
     private String nome;
@@ -25,6 +33,13 @@ public class Despesa {
 
     @Column(precision = 10, scale = 2)
     private BigDecimal valor;
+
+    @Column(length = 40)
+    private String categoria;
+
+    @OneToMany(mappedBy = "despesa", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("dataVencimento asc, numeroParcela asc")
+    private java.util.List<ParcelaDespesa> parcelas = new java.util.ArrayList<>();
 
     public Despesa() {
     }
@@ -44,6 +59,19 @@ public class Despesa {
     public void setViagem(Viagem viagem) {
         this.viagem = viagem;
     }
+
+    public Usuario getUsuario() { return usuario; }
+    public void setUsuario(Usuario usuario) { this.usuario = usuario; }
+    public Veiculo getVeiculo() { return veiculo; }
+    public void setVeiculo(Veiculo veiculo) { this.veiculo = veiculo; }
+    public String getCategoria() { return categoria; }
+    public void setCategoria(String categoria) { this.categoria = categoria; }
+    public java.util.List<ParcelaDespesa> getParcelas() { return parcelas; }
+    public void setParcelas(java.util.List<ParcelaDespesa> parcelas) {
+        this.parcelas.clear();
+        if (parcelas != null) parcelas.forEach(this::addParcela);
+    }
+    public void addParcela(ParcelaDespesa parcela) { parcela.setDespesa(this); this.parcelas.add(parcela); }
 
     public String getNome() {
         return nome;

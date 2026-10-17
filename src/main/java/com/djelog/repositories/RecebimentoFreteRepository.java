@@ -1,0 +1,24 @@
+package com.djelog.repositories;
+
+import com.djelog.entities.RecebimentoFrete;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface RecebimentoFreteRepository extends JpaRepository<RecebimentoFrete, UUID> {
+    @Query("select r from RecebimentoFrete r join fetch r.viagem v join fetch v.profissional p where v.id = :viagemId and p.usuario.id = :usuarioId order by r.dataRecebimento, r.id")
+    List<RecebimentoFrete> findByViagemIdAndUsuarioId(@Param("viagemId") UUID viagemId, @Param("usuarioId") UUID usuarioId);
+
+    @Query("select r from RecebimentoFrete r join fetch r.viagem v join fetch v.profissional p where r.id = :id and p.usuario.id = :usuarioId")
+    Optional<RecebimentoFrete> findByIdAndUsuarioId(@Param("id") UUID id, @Param("usuarioId") UUID usuarioId);
+
+    @Query("select coalesce(sum(r.valor), 0) from RecebimentoFrete r where r.viagem.id = :viagemId")
+    BigDecimal sumByViagemId(@Param("viagemId") UUID viagemId);
+
+    @Query("select coalesce(sum(r.valor), 0) from RecebimentoFrete r where r.viagem.id = :viagemId and r.inicial = true")
+    BigDecimal sumInicialByViagemId(@Param("viagemId") UUID viagemId);
+}

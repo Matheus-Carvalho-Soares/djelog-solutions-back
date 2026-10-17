@@ -5,17 +5,19 @@ import com.djelog.dtos.RelatorioDetalhePageDTO;
 import com.djelog.dtos.RelatorioAgrupadoDTO;
 import com.djelog.dtos.RelatorioFiltro;
 import com.djelog.dtos.ViagemRelatorioDTO;
+import com.djelog.dtos.ParcelaDespesaDTO;
 import com.djelog.entities.Despesa;
+import com.djelog.entities.ParcelaDespesa;
 import com.djelog.entities.Profissional;
 import com.djelog.entities.Veiculo;
 import com.djelog.entities.Viagem;
 import com.djelog.repositories.DespesaRepository;
-import com.djelog.repositories.EstadiaRepository;
 import com.djelog.repositories.ViagemRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -45,16 +47,13 @@ public class RelatorioService {
 
     private final ViagemRepository viagemRepository;
     private final DespesaRepository despesaRepository;
-    private final EstadiaRepository estadiaRepository;
 
     public RelatorioService(
             ViagemRepository viagemRepository,
-            DespesaRepository despesaRepository,
-            EstadiaRepository estadiaRepository
+            DespesaRepository despesaRepository
     ) {
         this.viagemRepository = viagemRepository;
         this.despesaRepository = despesaRepository;
-        this.estadiaRepository = estadiaRepository;
     }
 
     public List<ViagemRelatorioDTO> findDadosByDataInicioFim(
@@ -185,10 +184,9 @@ public class RelatorioService {
                 .toList();
 
         Map<UUID, List<DespesaDTO>> despesasPorViagem = findDespesasPorViagem(viagemIds);
-        Map<UUID, BigDecimal> estadiasPorViagem = findTotalEstadiasPorViagem(viagemIds);
 
         return viagens.stream()
-                .map(viagem -> toRelatorioViagemItem(viagem, despesasPorViagem, estadiasPorViagem))
+                .map(viagem -> toRelatorioViagemItem(viagem, despesasPorViagem))
                 .toList();
     }
 
@@ -200,28 +198,22 @@ public class RelatorioService {
                 ));
     }
 
-    private Map<UUID, BigDecimal> findTotalEstadiasPorViagem(List<UUID> viagemIds) {
-        return estadiaRepository.findByViagemIdsWithViagem(viagemIds).stream()
-                .collect(Collectors.groupingBy(
-                        estadia -> estadia.getViagem().getId(),
-                        Collectors.reducing(
-                                BigDecimal.ZERO,
-                                estadia -> integerToBigDecimal(estadia.getValor()),
-                                BigDecimal::add
-                        )
-                ));
-    }
-
     private RelatorioViagemItem toRelatorioViagemItem(
             Viagem viagem,
-            Map<UUID, List<DespesaDTO>> despesasPorViagem,
-            Map<UUID, BigDecimal> estadiasPorViagem
+            Map<UUID, List<DespesaDTO>> despesasPorViagem
     ) {
         BigDecimal valorFrete = defaultZero(viagem.getValorFrete());
-        BigDecimal totalEstadias = estadiasPorViagem.getOrDefault(viagem.getId(), BigDecimal.ZERO);
-        BigDecimal receitaTotal = valorFrete.add(totalEstadias);
-        BigDecimal comissaoCalculada = valorFrete.multiply(defaultZero(viagem.getComissao())).divide(CEM);
+        BigDecimal receitaTotal = valorFrete;
         List<DespesaDTO> despesas = despesasPorViagem.getOrDefault(viagem.getId(), List.of());
+        List<DespesaDTO> despesasComissao = despesas.stream().filter(this::isComissao).toList();
+        boolean temComissaoExplicita = !despesasComissao.isEmpty();
+        BigDecimal comissaoCalculada = temComissaoExplicita
+                ? sumExpenses(despesasComissao)
+                : viagem.getValorComissaoManual() != null
+                    ? viagem.getValorComissaoManual()
+                    : valorFrete.multiply(viagem.getComissao() == null ? new BigDecimal("15.00") : viagem.getComissao())
+                        .divide(CEM, 2, RoundingMode.HALF_UP);
+        BigDecimal despesasSemComissao = sumExpenses(despesas.stream().filter(expense -> !isComissao(expense)).toList());
 
         ViagemRelatorioDTO dto = new ViagemRelatorioDTO(
                 viagem.getDataInicio(),
@@ -230,8 +222,6 @@ public class RelatorioService {
                 viagem.getInicioFrete(),
                 viagem.getFimFrete(),
                 valorFrete,
-                totalEstadias,
-                receitaTotal,
                 comissaoCalculada,
                 despesas,
                 viagem.getProfissional() != null ? viagem.getProfissional().getNome() : null,
@@ -242,7 +232,9 @@ public class RelatorioService {
 
         dto.setViagemId(viagem.getId());
         dto.setParadaIntermediaria(viagem.getParadaIntermediaria());
-        dto.setLucroLiquido(receitaTotal.subtract(comissaoCalculada.add(defaultZero(dto.getTotalDespesas()))));
+        dto.setComissao(comissaoCalculada);
+        dto.setTotalDespesas(despesasSemComissao);
+        dto.setLucroLiquido(receitaTotal.subtract(comissaoCalculada.add(despesasSemComissao)));
         return new RelatorioViagemItem(viagem, dto);
     }
 
@@ -256,7 +248,6 @@ public class RelatorioService {
                 joinNonBlank(veiculo.getMarca(), veiculo.getNome()),
                 items.size(),
                 totals.valorFrete(),
-                totals.totalEstadias(),
                 totals.receitaTotal(),
                 totals.comissao(),
                 totals.totalDespesas(),
@@ -274,7 +265,6 @@ public class RelatorioService {
                 profissional.getTelefone(),
                 items.size(),
                 totals.valorFrete(),
-                totals.totalEstadias(),
                 totals.receitaTotal(),
                 totals.comissao(),
                 totals.totalDespesas(),
@@ -285,7 +275,6 @@ public class RelatorioService {
     private RelatorioTotals sumTotals(List<RelatorioViagemItem> items) {
         return new RelatorioTotals(
                 sum(items, dto -> dto.getValorFrete()),
-                sum(items, dto -> dto.getTotalEstadias()),
                 sum(items, dto -> dto.getReceitaTotal()),
                 sum(items, dto -> dto.getComissao()),
                 sum(items, dto -> dto.getTotalDespesas()),
@@ -307,7 +296,39 @@ public class RelatorioService {
         dto.setNome(despesa.getNome());
         dto.setDescricao(despesa.getDescricao());
         dto.setValor(despesa.getValor());
+        dto.setCategoria(despesa.getCategoria() == null ? inferCategory(despesa.getNome()) : despesa.getCategoria());
+        List<ParcelaDespesaDTO> parcelas = despesa.getParcelas().stream().map(this::toParcelaDTO).toList();
+        dto.setParcelas(parcelas);
         return dto;
+    }
+
+    private ParcelaDespesaDTO toParcelaDTO(ParcelaDespesa parcela) {
+        ParcelaDespesaDTO dto = new ParcelaDespesaDTO();
+        dto.setId(parcela.getId());
+        dto.setValor(parcela.getValor());
+        dto.setDataVencimento(parcela.getDataVencimento());
+        dto.setStatusPagamento(parcela.getStatusPagamento());
+        dto.setDataPagamento(parcela.getDataPagamento());
+        dto.setNumeroParcela(parcela.getNumeroParcela());
+        return dto;
+    }
+
+    private BigDecimal sumExpenses(List<DespesaDTO> expenses) {
+        return expenses.stream().map(DespesaDTO::getValor).map(this::defaultZero).reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private boolean isComissao(DespesaDTO expense) {
+        return "COMISSAO".equalsIgnoreCase(expense.getCategoria()) || inferCategory(expense.getNome()).equals("COMISSAO");
+    }
+
+    private String inferCategory(String name) {
+        String normalized = name == null ? "" : java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").toLowerCase(java.util.Locale.ROOT);
+        if (normalized.contains("comiss")) return "COMISSAO";
+        if (normalized.contains("pedag")) return "PEDAGIO";
+        if (normalized.contains("abaste") || normalized.contains("combust")) return "COMBUSTIVEL";
+        if (normalized.contains("pneu") || normalized.contains("freio") || normalized.contains("manuten")) return "MANUTENCAO";
+        return "OUTROS";
     }
 
     private void validatePeriodo(LocalDateTime dataInicio, LocalDateTime dataFim) {
@@ -398,10 +419,6 @@ public class RelatorioService {
         return value == null ? BigDecimal.ZERO : value;
     }
 
-    private BigDecimal integerToBigDecimal(Integer value) {
-        return value == null ? BigDecimal.ZERO : BigDecimal.valueOf(value);
-    }
-
     private BigDecimal defaultZero(BigDecimal value) {
         return value == null ? BigDecimal.ZERO : value;
     }
@@ -421,7 +438,6 @@ public class RelatorioService {
 
     private record RelatorioTotals(
             BigDecimal valorFrete,
-            BigDecimal totalEstadias,
             BigDecimal receitaTotal,
             BigDecimal comissao,
             BigDecimal totalDespesas,

@@ -20,15 +20,15 @@ public interface DespesaRepository extends JpaRepository<Despesa, UUID> {
     @Query("SELECT d FROM Despesa d JOIN FETCH d.viagem v WHERE v.id IN :viagemIds")
     List<Despesa> findByViagemIdsWithViagem(@Param("viagemIds") List<UUID> viagemIds);
 
-    @Query("SELECT d FROM Despesa d JOIN FETCH d.viagem v JOIN FETCH v.profissional p WHERE p.usuario.id = :usuarioId")
+    @Query("SELECT DISTINCT d FROM Despesa d LEFT JOIN FETCH d.viagem v LEFT JOIN FETCH v.profissional p LEFT JOIN FETCH d.veiculo ve LEFT JOIN FETCH d.parcelas pa WHERE d.usuario.id = :usuarioId OR p.usuario.id = :usuarioId")
     List<Despesa> findByUsuarioId(@Param("usuarioId") UUID usuarioId);
 
-    @Query("SELECT d FROM Despesa d JOIN FETCH d.viagem v JOIN FETCH v.profissional p WHERE d.id = :id AND p.usuario.id = :usuarioId")
+    @Query("SELECT DISTINCT d FROM Despesa d LEFT JOIN FETCH d.viagem v LEFT JOIN FETCH v.profissional p LEFT JOIN FETCH d.veiculo ve LEFT JOIN FETCH d.parcelas pa WHERE d.id = :id AND (d.usuario.id = :usuarioId OR p.usuario.id = :usuarioId)")
     Optional<Despesa> findByIdAndUsuarioId(@Param("id") UUID id, @Param("usuarioId") UUID usuarioId);
 
-    @Query("SELECT d FROM Despesa d JOIN FETCH d.viagem v JOIN FETCH v.profissional p WHERE v.id = :viagemId AND p.usuario.id = :usuarioId")
+    @Query("SELECT DISTINCT d FROM Despesa d LEFT JOIN FETCH d.viagem v LEFT JOIN FETCH d.parcelas pa WHERE v.id = :viagemId AND (d.usuario.id = :usuarioId OR v.profissional.usuario.id = :usuarioId)")
     List<Despesa> findByViagemIdAndUsuarioId(@Param("viagemId") UUID viagemId, @Param("usuarioId") UUID usuarioId);
 
-    @Query("SELECT COUNT(d) > 0 FROM Despesa d JOIN d.viagem v JOIN v.profissional p WHERE d.id = :id AND p.usuario.id = :usuarioId")
+    @Query("SELECT COUNT(d) > 0 FROM Despesa d LEFT JOIN d.viagem v LEFT JOIN v.profissional p WHERE d.id = :id AND (d.usuario.id = :usuarioId OR p.usuario.id = :usuarioId)")
     boolean existsByIdAndUsuarioId(@Param("id") UUID id, @Param("usuarioId") UUID usuarioId);
 }

@@ -31,15 +31,15 @@ public class ExcelService {
     private static final String[] RELATORIO_POR_DATA_HEADERS = {
             "Data Inicio", "Data Fim", "Status", "Profissional", "Empresa",
             "Veiculo Marca", "Veiculo Placa", "Origem Frete", "Parada Intermediaria", "Destino Frete",
-            "Valor Frete", "Estadias", "Receita Total", "Comissao", "Total Despesas", "Lucro Liquido"
+            "Valor Frete", "Receita Total", "Comissao", "Total Despesas", "Lucro Liquido"
     };
     private static final String[] RELATORIO_POR_VEICULO_HEADERS = {
-            "Veiculo", "Detalhe", "Qtd Viagens", "Valor Frete", "Estadias",
+            "Veiculo", "Detalhe", "Qtd Viagens", "Valor Frete",
             "Receita Total", "Comissao", "Total Despesas", "Lucro Liquido",
             "Receita Media por Viagem", "Margem Liquida (%)"
     };
     private static final String[] RELATORIO_POR_PROFISSIONAL_HEADERS = {
-            "Profissional", "Detalhe", "Qtd Viagens", "Valor Frete", "Estadias",
+            "Profissional", "Detalhe", "Qtd Viagens", "Valor Frete",
             "Receita Total", "Comissao", "Total Despesas", "Lucro Liquido",
             "Receita Media por Viagem", "Margem Liquida (%)"
     };
@@ -175,7 +175,6 @@ public class ExcelService {
             CellStyle relatorioPorDataMoneyStyle
     ) {
         BigDecimal totalFrete = BigDecimal.ZERO;
-        BigDecimal totalEstadias = BigDecimal.ZERO;
         BigDecimal totalReceita = BigDecimal.ZERO;
         BigDecimal totalComissao = BigDecimal.ZERO;
         BigDecimal totalDespesas = BigDecimal.ZERO;
@@ -187,7 +186,6 @@ public class ExcelService {
             writeRelatorioPorDataItemRow(row, item, relatorioPorDataMoneyStyle);
 
             totalFrete = totalFrete.add(defaultZero(item.getValorFrete()));
-            totalEstadias = totalEstadias.add(defaultZero(item.getTotalEstadias()));
             totalReceita = totalReceita.add(defaultZero(item.getReceitaTotal()));
             totalComissao = totalComissao.add(defaultZero(item.getComissao()));
             totalDespesas = totalDespesas.add(defaultZero(item.getTotalDespesas()));
@@ -198,7 +196,6 @@ public class ExcelService {
         writeRelatorioPorDataTotalRow(
                 totalRow,
                 totalFrete,
-                totalEstadias,
                 totalReceita,
                 totalComissao,
                 totalDespesas,
@@ -233,7 +230,6 @@ public class ExcelService {
     ) {
         int totalQuantidade = 0;
         BigDecimal totalFrete = BigDecimal.ZERO;
-        BigDecimal totalEstadias = BigDecimal.ZERO;
         BigDecimal totalReceita = BigDecimal.ZERO;
         BigDecimal totalComissao = BigDecimal.ZERO;
         BigDecimal totalDespesas = BigDecimal.ZERO;
@@ -246,7 +242,6 @@ public class ExcelService {
 
             totalQuantidade += item.getQuantidadeViagens() == null ? 0 : item.getQuantidadeViagens();
             totalFrete = totalFrete.add(defaultZero(item.getValorFrete()));
-            totalEstadias = totalEstadias.add(defaultZero(item.getTotalEstadias()));
             totalReceita = totalReceita.add(defaultZero(item.getReceitaTotal()));
             totalComissao = totalComissao.add(defaultZero(item.getComissao()));
             totalDespesas = totalDespesas.add(defaultZero(item.getTotalDespesas()));
@@ -258,7 +253,6 @@ public class ExcelService {
                 totalRow,
                 totalQuantidade,
                 totalFrete,
-                totalEstadias,
                 totalReceita,
                 totalComissao,
                 totalDespesas,
@@ -284,11 +278,10 @@ public class ExcelService {
         writeTextCell(row, 8, item.getParadaIntermediaria());
         writeTextCell(row, 9, item.getFimFrete());
         writeMoneyCell(row, 10, item.getValorFrete(), relatorioPorDataMoneyStyle);
-        writeMoneyCell(row, 11, item.getTotalEstadias(), relatorioPorDataMoneyStyle);
-        writeMoneyCell(row, 12, item.getReceitaTotal(), relatorioPorDataMoneyStyle);
-        writeMoneyCell(row, 13, item.getComissao(), relatorioPorDataMoneyStyle);
-        writeMoneyCell(row, 14, item.getTotalDespesas(), relatorioPorDataMoneyStyle);
-        writeMoneyCell(row, 15, item.getLucroLiquido(), relatorioPorDataMoneyStyle);
+        writeMoneyCell(row, 11, item.getReceitaTotal(), relatorioPorDataMoneyStyle);
+        writeMoneyCell(row, 12, item.getComissao(), relatorioPorDataMoneyStyle);
+        writeMoneyCell(row, 13, item.getTotalDespesas(), relatorioPorDataMoneyStyle);
+        writeMoneyCell(row, 14, item.getLucroLiquido(), relatorioPorDataMoneyStyle);
     }
 
     private void writeRelatorioAgrupadoItemRow(
@@ -301,19 +294,17 @@ public class ExcelService {
         writeTextCell(row, 1, item.getGrupoDetalhe());
         writeIntegerCell(row, 2, item.getQuantidadeViagens());
         writeMoneyCell(row, 3, item.getValorFrete(), moneyStyle);
-        writeMoneyCell(row, 4, item.getTotalEstadias(), moneyStyle);
-        writeMoneyCell(row, 5, item.getReceitaTotal(), moneyStyle);
-        writeMoneyCell(row, 6, item.getComissao(), moneyStyle);
-        writeMoneyCell(row, 7, item.getTotalDespesas(), moneyStyle);
-        writeMoneyCell(row, 8, item.getLucroLiquido(), moneyStyle);
-        writeMoneyCell(row, 9, item.getReceitaMediaPorViagem(), moneyStyle);
-        writePercentageCell(row, 10, item.getMargemLiquidaPercentual(), percentageStyle);
+        writeMoneyCell(row, 4, item.getReceitaTotal(), moneyStyle);
+        writeMoneyCell(row, 5, item.getComissao(), moneyStyle);
+        writeMoneyCell(row, 6, item.getTotalDespesas(), moneyStyle);
+        writeMoneyCell(row, 7, item.getLucroLiquido(), moneyStyle);
+        writeMoneyCell(row, 8, item.getReceitaMediaPorViagem(), moneyStyle);
+        writePercentageCell(row, 9, item.getMargemLiquidaPercentual(), percentageStyle);
     }
 
     private void writeRelatorioPorDataTotalRow(
             Row totalRow,
             BigDecimal totalFrete,
-            BigDecimal totalEstadias,
             BigDecimal totalReceita,
             BigDecimal totalComissao,
             BigDecimal totalDespesas,
@@ -322,18 +313,16 @@ public class ExcelService {
     ) {
         writeTextCell(totalRow, 8, "TOTAIS");
         writeMoneyCell(totalRow, 9, totalFrete, relatorioPorDataMoneyStyle);
-        writeMoneyCell(totalRow, 10, totalEstadias, relatorioPorDataMoneyStyle);
-        writeMoneyCell(totalRow, 11, totalReceita, relatorioPorDataMoneyStyle);
-        writeMoneyCell(totalRow, 12, totalComissao, relatorioPorDataMoneyStyle);
-        writeMoneyCell(totalRow, 13, totalDespesas, relatorioPorDataMoneyStyle);
-        writeMoneyCell(totalRow, 14, totalLucro, relatorioPorDataMoneyStyle);
+        writeMoneyCell(totalRow, 10, totalReceita, relatorioPorDataMoneyStyle);
+        writeMoneyCell(totalRow, 11, totalComissao, relatorioPorDataMoneyStyle);
+        writeMoneyCell(totalRow, 12, totalDespesas, relatorioPorDataMoneyStyle);
+        writeMoneyCell(totalRow, 13, totalLucro, relatorioPorDataMoneyStyle);
     }
 
     private void writeRelatorioAgrupadoTotalRow(
             Row totalRow,
             int totalQuantidade,
             BigDecimal totalFrete,
-            BigDecimal totalEstadias,
             BigDecimal totalReceita,
             BigDecimal totalComissao,
             BigDecimal totalDespesas,
@@ -344,13 +333,12 @@ public class ExcelService {
         writeTextCell(totalRow, 1, "TOTAIS");
         writeIntegerCell(totalRow, 2, totalQuantidade);
         writeMoneyCell(totalRow, 3, totalFrete, moneyStyle);
-        writeMoneyCell(totalRow, 4, totalEstadias, moneyStyle);
-        writeMoneyCell(totalRow, 5, totalReceita, moneyStyle);
-        writeMoneyCell(totalRow, 6, totalComissao, moneyStyle);
-        writeMoneyCell(totalRow, 7, totalDespesas, moneyStyle);
-        writeMoneyCell(totalRow, 8, totalLucro, moneyStyle);
-        writeMoneyCell(totalRow, 9, calculateAverage(totalReceita, totalQuantidade), moneyStyle);
-        writePercentageCell(totalRow, 10, calculateMargin(totalLucro, totalReceita), percentageStyle);
+        writeMoneyCell(totalRow, 4, totalReceita, moneyStyle);
+        writeMoneyCell(totalRow, 5, totalComissao, moneyStyle);
+        writeMoneyCell(totalRow, 6, totalDespesas, moneyStyle);
+        writeMoneyCell(totalRow, 7, totalLucro, moneyStyle);
+        writeMoneyCell(totalRow, 8, calculateAverage(totalReceita, totalQuantidade), moneyStyle);
+        writePercentageCell(totalRow, 9, calculateMargin(totalLucro, totalReceita), percentageStyle);
     }
 
     private void autoSizeRelatorioPorDataColumns(Sheet sheet) {

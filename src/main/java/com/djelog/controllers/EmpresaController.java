@@ -4,6 +4,7 @@ import com.djelog.dtos.EmpresaDTO;
 import com.djelog.entities.Empresa;
 import com.djelog.repositories.EmpresaRepository;
 import com.djelog.services.CurrentUserService;
+import com.djelog.services.EmpresaService;
 import com.djelog.services.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -22,11 +23,13 @@ public class EmpresaController {
     private final EmpresaRepository empresaRepository;
     private final UsuarioService usuarioService;
     private final CurrentUserService currentUserService;
+    private final EmpresaService empresaService;
 
-    public EmpresaController(EmpresaRepository empresaRepository, UsuarioService usuarioService, CurrentUserService currentUserService) {
+    public EmpresaController(EmpresaRepository empresaRepository, UsuarioService usuarioService, CurrentUserService currentUserService, EmpresaService empresaService) {
         this.empresaRepository = empresaRepository;
         this.usuarioService = usuarioService;
         this.currentUserService = currentUserService;
+        this.empresaService = empresaService;
     }
 
     @GetMapping("/findAll")
@@ -73,14 +76,9 @@ public class EmpresaController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable("id") UUID id) {
-        UUID usuarioId = currentUserService.getCurrentUserId();
-        Empresa empresa = empresaRepository.findByIdAndUsuario_Id(id, usuarioId)
-                .orElseThrow(NoSuchElementException::new);
-        if (empresa == null) {
-            return ResponseEntity.notFound().build();
-        }
-        empresaRepository.delete(empresa);
-        return ResponseEntity.noContent().build();
+        return empresaService.delete(id, currentUserService.getCurrentUserId())
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 
     private EmpresaDTO convertToDTO(Empresa empresa) {

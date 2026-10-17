@@ -203,7 +203,7 @@ public class ImportacaoViagemService {
             trip.setParadaIntermediaria(row.getParadaIntermediaria());
             trip.setFimFrete(row.getFimFrete());
             trip.setValorFrete(row.getValorFrete());
-            trip.setComissao(row.getComissao() == null ? BigDecimal.ZERO : row.getComissao());
+            trip.setComissao(row.getComissao() == null ? new BigDecimal("15.00") : row.getComissao());
             String status = row.getStatusViagem() == null || row.getStatusViagem().isBlank() ? "CONCLUIDA" : row.getStatusViagem();
             trip.setStatus(status);
             trip = viagemRepository.save(trip);

@@ -33,6 +33,12 @@ public class ViagemDTO {
 
     @Size(max = 120, message = "Parada intermediaria deve ter no maximo 120 caracteres.")
     private String paradaIntermediaria;
+    private Long inicioMunicipioCodigo;
+    private Long inicioUfCodigo;
+    private Long paradaMunicipioCodigo;
+    private Long paradaUfCodigo;
+    private Long fimMunicipioCodigo;
+    private Long fimUfCodigo;
 
     @NotNull(message = "Informe o valor do frete.")
     @DecimalMin(value = "0.0", inclusive = false, message = "Valor do frete deve ser maior que zero.")
@@ -40,6 +46,14 @@ public class ViagemDTO {
 
     @DecimalMin(value = "0.0", message = "Comissao deve ser maior ou igual a zero.")
     private BigDecimal comissao;
+
+    private BigDecimal valorComissao;
+    private BigDecimal valorComissaoManual;
+    private BigDecimal percentualAdiantamento;
+    private BigDecimal valorAdiantamento;
+    private BigDecimal valorSaldo;
+    private BigDecimal valorRecebido;
+    private BigDecimal saldoPendente;
 
     @NotNull(message = "Informe a data de inicio.")
     private LocalDateTime dataInicio;
@@ -103,6 +117,18 @@ public class ViagemDTO {
     public String getParadaIntermediaria() { return paradaIntermediaria; }
 
     public void setParadaIntermediaria(String paradaIntermediaria) { this.paradaIntermediaria = paradaIntermediaria; }
+    public Long getInicioMunicipioCodigo() { return inicioMunicipioCodigo; }
+    public void setInicioMunicipioCodigo(Long value) { this.inicioMunicipioCodigo = value; }
+    public Long getInicioUfCodigo() { return inicioUfCodigo; }
+    public void setInicioUfCodigo(Long value) { this.inicioUfCodigo = value; }
+    public Long getParadaMunicipioCodigo() { return paradaMunicipioCodigo; }
+    public void setParadaMunicipioCodigo(Long value) { this.paradaMunicipioCodigo = value; }
+    public Long getParadaUfCodigo() { return paradaUfCodigo; }
+    public void setParadaUfCodigo(Long value) { this.paradaUfCodigo = value; }
+    public Long getFimMunicipioCodigo() { return fimMunicipioCodigo; }
+    public void setFimMunicipioCodigo(Long value) { this.fimMunicipioCodigo = value; }
+    public Long getFimUfCodigo() { return fimUfCodigo; }
+    public void setFimUfCodigo(Long value) { this.fimUfCodigo = value; }
 
     public BigDecimal getValorFrete() {
         return valorFrete;
@@ -119,6 +145,21 @@ public class ViagemDTO {
     public void setComissao(BigDecimal comissao) {
         this.comissao = comissao;
     }
+
+    public BigDecimal getValorComissao() { return valorComissao; }
+    public void setValorComissao(BigDecimal valorComissao) { this.valorComissao = valorComissao; }
+    public BigDecimal getValorComissaoManual() { return valorComissaoManual; }
+    public void setValorComissaoManual(BigDecimal valorComissaoManual) { this.valorComissaoManual = valorComissaoManual; }
+    public BigDecimal getPercentualAdiantamento() { return percentualAdiantamento; }
+    public void setPercentualAdiantamento(BigDecimal percentualAdiantamento) { this.percentualAdiantamento = percentualAdiantamento; }
+    public BigDecimal getValorAdiantamento() { return valorAdiantamento; }
+    public void setValorAdiantamento(BigDecimal valorAdiantamento) { this.valorAdiantamento = valorAdiantamento; }
+    public BigDecimal getValorSaldo() { return valorSaldo; }
+    public void setValorSaldo(BigDecimal valorSaldo) { this.valorSaldo = valorSaldo; }
+    public BigDecimal getValorRecebido() { return valorRecebido; }
+    public void setValorRecebido(BigDecimal valorRecebido) { this.valorRecebido = valorRecebido; }
+    public BigDecimal getSaldoPendente() { return saldoPendente; }
+    public void setSaldoPendente(BigDecimal saldoPendente) { this.saldoPendente = saldoPendente; }
 
 
     public LocalDateTime getDataInicio() {

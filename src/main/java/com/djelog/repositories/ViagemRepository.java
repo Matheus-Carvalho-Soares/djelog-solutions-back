@@ -1,8 +1,10 @@
 package com.djelog.repositories;
 
 import com.djelog.entities.Viagem;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -20,6 +22,10 @@ public interface ViagemRepository extends JpaRepository<Viagem, UUID> {
     @EntityGraph(attributePaths = {"profissional", "empresa", "veiculo"})
     Optional<Viagem> findByIdAndProfissional_Usuario_Id(UUID id, UUID usuarioId);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select v from Viagem v where v.id = :id and v.profissional.usuario.id = :usuarioId")
+    Optional<Viagem> findByIdAndProfissional_Usuario_IdForUpdate(@Param("id") UUID id, @Param("usuarioId") UUID usuarioId);
+
     boolean existsByIdAndProfissional_Usuario_Id(UUID id, UUID usuarioId);
 
     @Query("""
@@ -29,8 +35,8 @@ public interface ViagemRepository extends JpaRepository<Viagem, UUID> {
             left join fetch v.empresa e
             join fetch v.veiculo ve
             where p.usuario.id = :usuarioId
+              and v.dataInicio >= :dataInicio
               and v.dataInicio <= :dataFim
-              and (v.dataFim is null or v.dataFim >= :dataInicio)
             order by v.dataInicio asc
             """)
     List<Viagem> findByPeriodoSobreposto(
@@ -46,8 +52,8 @@ public interface ViagemRepository extends JpaRepository<Viagem, UUID> {
             left join fetch v.empresa e
             join fetch v.veiculo ve
             where p.usuario.id = :usuarioId
+              and v.dataInicio >= :dataInicio
               and v.dataInicio <= :dataFim
-              and (v.dataFim is null or v.dataFim >= :dataInicio)
               and (:filtraVeiculos = false or ve.id in :veiculoIds)
               and (:filtraProfissionais = false or p.id in :profissionalIds)
               and (:filtraEmpresas = false or e.id in :empresaIds)

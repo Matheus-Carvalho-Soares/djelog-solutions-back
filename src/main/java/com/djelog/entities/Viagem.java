@@ -43,6 +43,19 @@ public class Viagem {
     @Size(max = 120, message = "Parada intermediaria deve ter no maximo 120 caracteres.")
     private String paradaIntermediaria;
 
+    @Column(name = "inicio_municipio_codigo")
+    private Long inicioMunicipioCodigo;
+    @Column(name = "inicio_uf_codigo")
+    private Long inicioUfCodigo;
+    @Column(name = "parada_municipio_codigo")
+    private Long paradaMunicipioCodigo;
+    @Column(name = "parada_uf_codigo")
+    private Long paradaUfCodigo;
+    @Column(name = "fim_municipio_codigo")
+    private Long fimMunicipioCodigo;
+    @Column(name = "fim_uf_codigo")
+    private Long fimUfCodigo;
+
     @Column(name = "valor_frete", nullable = false, precision = 10, scale = 2)
     @NotNull(message = "Informe o valor do frete.")
     @DecimalMin(value = "0.0", inclusive = false, message = "Valor do frete deve ser maior que zero.")
@@ -51,6 +64,13 @@ public class Viagem {
     @Column(precision = 10, scale = 2)
     @DecimalMin(value = "0.0", message = "Comissao deve ser maior ou igual a zero.")
     private BigDecimal comissao;
+
+    @Column(name = "valor_comissao_manual", precision = 12, scale = 2)
+    @DecimalMin(value = "0.0", message = "Valor da comissao deve ser maior ou igual a zero.")
+    private BigDecimal valorComissaoManual;
+
+    @Column(name = "percentual_adiantamento", precision = 5, scale = 2, nullable = false)
+    private BigDecimal percentualAdiantamento = new BigDecimal("70.00");
 
 
     @Column(name = "data_inicio", nullable = false)
@@ -112,6 +132,19 @@ public class Viagem {
 
     public void setParadaIntermediaria(String paradaIntermediaria) { this.paradaIntermediaria = paradaIntermediaria; }
 
+    public Long getInicioMunicipioCodigo() { return inicioMunicipioCodigo; }
+    public void setInicioMunicipioCodigo(Long value) { this.inicioMunicipioCodigo = value; }
+    public Long getInicioUfCodigo() { return inicioUfCodigo; }
+    public void setInicioUfCodigo(Long value) { this.inicioUfCodigo = value; }
+    public Long getParadaMunicipioCodigo() { return paradaMunicipioCodigo; }
+    public void setParadaMunicipioCodigo(Long value) { this.paradaMunicipioCodigo = value; }
+    public Long getParadaUfCodigo() { return paradaUfCodigo; }
+    public void setParadaUfCodigo(Long value) { this.paradaUfCodigo = value; }
+    public Long getFimMunicipioCodigo() { return fimMunicipioCodigo; }
+    public void setFimMunicipioCodigo(Long value) { this.fimMunicipioCodigo = value; }
+    public Long getFimUfCodigo() { return fimUfCodigo; }
+    public void setFimUfCodigo(Long value) { this.fimUfCodigo = value; }
+
     public BigDecimal getValorFrete() {
         return valorFrete;
     }
@@ -127,6 +160,14 @@ public class Viagem {
     public void setComissao(BigDecimal comissao) {
         this.comissao = comissao;
     }
+
+    public BigDecimal getValorComissaoManual() { return valorComissaoManual; }
+
+    public void setValorComissaoManual(BigDecimal valorComissaoManual) { this.valorComissaoManual = valorComissaoManual; }
+
+    public BigDecimal getPercentualAdiantamento() { return percentualAdiantamento; }
+
+    public void setPercentualAdiantamento(BigDecimal percentualAdiantamento) { this.percentualAdiantamento = percentualAdiantamento; }
 
 
     public LocalDateTime getDataInicio() {

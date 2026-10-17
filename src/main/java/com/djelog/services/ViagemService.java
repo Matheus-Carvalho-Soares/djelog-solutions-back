@@ -4,14 +4,21 @@ import com.djelog.dtos.EmpresaDTO;
 import com.djelog.dtos.ProfissionalDTO;
 import com.djelog.dtos.VeiculoDTO;
 import com.djelog.dtos.ViagemDTO;
+import com.djelog.dtos.ViagemCreateRequestDTO;
 import com.djelog.entities.Empresa;
 import com.djelog.entities.Profissional;
+import com.djelog.entities.RecebimentoFrete;
 import com.djelog.entities.Veiculo;
 import com.djelog.entities.Viagem;
 import com.djelog.repositories.EmpresaRepository;
 import com.djelog.repositories.ProfissionalRepository;
 import com.djelog.repositories.VeiculoRepository;
 import com.djelog.repositories.ViagemRepository;
+import com.djelog.repositories.RecebimentoFreteRepository;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.Locale;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,17 +36,20 @@ public class ViagemService {
     private final EmpresaRepository empresaRepository;
     private final ProfissionalRepository profissionalRepository;
     private final VeiculoRepository veiculoRepository;
+    private final RecebimentoFreteRepository recebimentoRepository;
 
     public ViagemService(
             ViagemRepository viagemRepository,
             EmpresaRepository empresaRepository,
             ProfissionalRepository profissionalRepository,
-            VeiculoRepository veiculoRepository
+            VeiculoRepository veiculoRepository,
+            RecebimentoFreteRepository recebimentoRepository
     ) {
         this.viagemRepository = viagemRepository;
         this.empresaRepository = empresaRepository;
         this.profissionalRepository = profissionalRepository;
         this.veiculoRepository = veiculoRepository;
+        this.recebimentoRepository = recebimentoRepository;
     }
 
     @Transactional(readOnly = true)
@@ -55,9 +65,55 @@ public class ViagemService {
                 .map(this::toDTO);
     }
 
-    public ViagemDTO create(Viagem viagem, UUID usuarioId) {
-        setManagedRelationships(viagem, usuarioId);
+    public ViagemDTO create(ViagemCreateRequestDTO request, UUID usuarioId) {
+        Viagem viagem = new Viagem();
+        viagem.setProfissional(profissionalRepository.findByIdAndUsuario_Id(request.getProfissionalId(), usuarioId)
+                .orElseThrow(() -> new AccessDeniedException("Motorista nao encontrado para este usuario.")));
+        viagem.setVeiculo(veiculoRepository.findByIdAndProfissional_Usuario_Id(request.getVeiculoId(), usuarioId)
+                .orElseThrow(() -> new AccessDeniedException("Veiculo nao encontrado para este usuario.")));
+        if (request.getEmpresaId() != null) {
+            viagem.setEmpresa(empresaRepository.findByIdAndUsuario_Id(request.getEmpresaId(), usuarioId)
+                    .orElseThrow(() -> new AccessDeniedException("Empresa nao encontrada para este usuario.")));
+        }
+        viagem.setInicioFrete(request.getInicioFrete().trim());
+        viagem.setFimFrete(request.getFimFrete());
+        viagem.setParadaIntermediaria(request.getParadaIntermediaria());
+        viagem.setInicioMunicipioCodigo(request.getInicioMunicipioCodigo());
+        viagem.setInicioUfCodigo(request.getInicioUfCodigo());
+        viagem.setParadaMunicipioCodigo(request.getParadaMunicipioCodigo());
+        viagem.setParadaUfCodigo(request.getParadaUfCodigo());
+        viagem.setFimMunicipioCodigo(request.getFimMunicipioCodigo());
+        viagem.setFimUfCodigo(request.getFimUfCodigo());
+        viagem.setValorFrete(request.getValorFrete());
+        viagem.setComissao(request.getComissao());
+        viagem.setValorComissaoManual(request.getValorComissaoManual());
+        viagem.setPercentualAdiantamento(new BigDecimal("70.00"));
+        viagem.setDataInicio(request.getDataInicio());
+        viagem.setDataFim(request.getDataFim());
+        viagem.setStatus(request.getStatus());
+        applyFinancialDefaults(viagem, true);
+
+        String formaPagamento = request.getFormaPagamentoFrete().toUpperCase(Locale.ROOT);
+        BigDecimal valorInicial;
+        if ("A_VISTA".equals(formaPagamento)) {
+            valorInicial = viagem.getValorFrete();
+        } else {
+            valorInicial = request.getValorAdiantamento() == null
+                    ? viagem.getValorFrete().multiply(new BigDecimal("0.70")).setScale(2, RoundingMode.HALF_UP)
+                    : request.getValorAdiantamento().setScale(2, RoundingMode.UNNECESSARY);
+            if (valorInicial.compareTo(BigDecimal.ZERO) <= 0 || valorInicial.compareTo(viagem.getValorFrete()) > 0) {
+                throw new IllegalArgumentException("O adiantamento deve ser maior que zero e nao pode ultrapassar o valor do frete.");
+            }
+        }
+
         Viagem saved = viagemRepository.save(viagem);
+        RecebimentoFrete recebimentoInicial = new RecebimentoFrete();
+        recebimentoInicial.setViagem(saved);
+        recebimentoInicial.setValor(valorInicial);
+        recebimentoInicial.setDataRecebimento(request.getDataRecebimentoInicial() == null
+                ? LocalDate.now() : request.getDataRecebimentoInicial());
+        recebimentoInicial.setInicial(true);
+        recebimentoRepository.save(recebimentoInicial);
         return toDTO(saved);
     }
 
@@ -68,14 +124,27 @@ public class ViagemService {
 
         return viagemRepository.findByIdAndProfissional_Usuario_Id(id, usuarioId)
                 .map(existing -> {
+                    applyFinancialDefaults(viagem, false);
+                    BigDecimal totalRecebido = recebimentoRepository.sumByViagemId(existing.getId());
+                    if (viagem.getValorFrete() == null || viagem.getValorFrete().compareTo(totalRecebido) < 0) {
+                        throw new IllegalArgumentException("O frete nao pode ficar abaixo do valor ja recebido nesta viagem.");
+                    }
                     existing.setProfissional(profissional);
                     existing.setEmpresa(empresa);
                     existing.setVeiculo(veiculo);
                     existing.setInicioFrete(viagem.getInicioFrete());
                     existing.setFimFrete(viagem.getFimFrete());
                     existing.setParadaIntermediaria(viagem.getParadaIntermediaria());
+                    existing.setInicioMunicipioCodigo(viagem.getInicioMunicipioCodigo());
+                    existing.setInicioUfCodigo(viagem.getInicioUfCodigo());
+                    existing.setParadaMunicipioCodigo(viagem.getParadaMunicipioCodigo());
+                    existing.setParadaUfCodigo(viagem.getParadaUfCodigo());
+                    existing.setFimMunicipioCodigo(viagem.getFimMunicipioCodigo());
+                    existing.setFimUfCodigo(viagem.getFimUfCodigo());
                     existing.setValorFrete(viagem.getValorFrete());
                     existing.setComissao(viagem.getComissao());
+                    existing.setValorComissaoManual(viagem.getValorComissaoManual());
+                    existing.setPercentualAdiantamento(viagem.getPercentualAdiantamento());
                     existing.setDataInicio(viagem.getDataInicio());
                     existing.setDataFim(viagem.getDataFim());
                     existing.setStatus(viagem.getStatus());
@@ -94,6 +163,18 @@ public class ViagemService {
         viagem.setEmpresa(resolveEmpresa(viagem, usuarioId));
         viagem.setProfissional(resolveProfissional(viagem, usuarioId));
         viagem.setVeiculo(resolveVeiculo(viagem, usuarioId));
+    }
+
+    private void applyFinancialDefaults(Viagem viagem, boolean creating) {
+        if (viagem.getComissao() == null) viagem.setComissao(new BigDecimal("15.00"));
+        if (viagem.getPercentualAdiantamento() == null) viagem.setPercentualAdiantamento(new BigDecimal("70.00"));
+        BigDecimal advance = viagem.getPercentualAdiantamento();
+        if (advance.compareTo(BigDecimal.ZERO) < 0 || advance.compareTo(new BigDecimal("100")) > 0) {
+            throw new IllegalArgumentException("O percentual de adiantamento deve ficar entre 0 e 100.");
+        }
+        if (creating && viagem.getValorComissaoManual() == null && viagem.getValorFrete() != null) {
+            viagem.setValorComissaoManual(null);
+        }
     }
 
     private Empresa resolveEmpresa(Viagem viagem, UUID usuarioId) {
@@ -126,8 +207,28 @@ public class ViagemService {
         dto.setInicioFrete(viagem.getInicioFrete());
         dto.setFimFrete(viagem.getFimFrete());
         dto.setParadaIntermediaria(viagem.getParadaIntermediaria());
+        dto.setInicioMunicipioCodigo(viagem.getInicioMunicipioCodigo());
+        dto.setInicioUfCodigo(viagem.getInicioUfCodigo());
+        dto.setParadaMunicipioCodigo(viagem.getParadaMunicipioCodigo());
+        dto.setParadaUfCodigo(viagem.getParadaUfCodigo());
+        dto.setFimMunicipioCodigo(viagem.getFimMunicipioCodigo());
+        dto.setFimUfCodigo(viagem.getFimUfCodigo());
         dto.setValorFrete(viagem.getValorFrete());
         dto.setComissao(viagem.getComissao());
+        BigDecimal valorComissao = viagem.getValorComissaoManual() != null
+                ? viagem.getValorComissaoManual()
+                : viagem.getValorFrete().multiply(viagem.getComissao() == null ? new BigDecimal("15") : viagem.getComissao())
+                    .divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+        dto.setValorComissao(valorComissao);
+        dto.setValorComissaoManual(viagem.getValorComissaoManual());
+        BigDecimal percentualAdiantamento = viagem.getPercentualAdiantamento() == null ? new BigDecimal("70") : viagem.getPercentualAdiantamento();
+        BigDecimal valorAdiantamento = recebimentoRepository.sumInicialByViagemId(viagem.getId());
+        dto.setPercentualAdiantamento(percentualAdiantamento);
+        dto.setValorAdiantamento(valorAdiantamento);
+        dto.setValorSaldo(viagem.getValorFrete().subtract(valorAdiantamento).max(BigDecimal.ZERO));
+        BigDecimal valorRecebido = recebimentoRepository.sumByViagemId(viagem.getId());
+        dto.setValorRecebido(valorRecebido);
+        dto.setSaldoPendente(viagem.getValorFrete().subtract(valorRecebido).max(BigDecimal.ZERO));
         dto.setDataInicio(viagem.getDataInicio());
         dto.setDataFim(viagem.getDataFim());
         dto.setStatus(viagem.getStatus());

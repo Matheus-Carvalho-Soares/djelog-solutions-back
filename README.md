@@ -1,13 +1,14 @@
 # 🚚 Djelog Solutions Back
 
-Backend do sistema **Djelog Solutions**, responsável pela API REST da aplicação logística. A API centraliza autenticação, controle de usuários e operações de negócio relacionadas a profissionais/motoristas, veículos, empresas, viagens, viagens comissionadas, despesas, estadias e relatórios.
+Backend do sistema **Djelog Solutions**, responsável pela API REST da aplicação logística. A API centraliza autenticação, controle de usuários e operações de negócio relacionadas a profissionais/motoristas, veículos, empresas, viagens, viagens comissionadas, despesas e relatórios.
 
 ## ✨ Principais Recursos
 
 - 🔐 Cadastro e login de usuários.
 - 🎫 Autenticação stateless com JWT.
 - 🔒 Criptografia de senha com BCrypt.
-- 🧾 CRUD de empresas, profissionais, veículos, viagens, viagens comissionadas, despesas e estadias.
+- 🧾 CRUD de empresas, profissionais, veículos, viagens, viagens comissionadas e despesas.
+- 💰 Recebimentos de frete vinculados à viagem, com valor, data e saldo pendente.
 - 📈 Relatório de viagens por período.
 - 🗄️ Persistência com JPA/Hibernate.
 - 🐘 Banco PostgreSQL em ambiente real e H2 para testes.
@@ -199,5 +200,5 @@ No Render, mantenha essas origens na variável `APP_CORS_ALLOWED_ORIGINS`, separ
 - `/api/viagem`: consulta e manutenção de viagens.
 - `GET /api/viagem/excel/dados`: dados de relatório por período.
 - `/api/viagem-comissionada`: consulta e manutenção de viagens comissionadas.
-- `/api/estadias`: consulta e manutenção de estadias.
 - `/api/despesas`: consulta e manutenção de despesas.
+- `/api/viagem/{id}/recebimentos`: registro e consulta de recebimentos do frete.
