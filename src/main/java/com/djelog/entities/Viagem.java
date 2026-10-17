@@ -69,7 +69,9 @@ public class Viagem {
     @DecimalMin(value = "0.0", message = "Valor da comissao deve ser maior ou igual a zero.")
     private BigDecimal valorComissaoManual;
 
-    @Column(name = "percentual_adiantamento", precision = 5, scale = 2, nullable = false)
+    // Kept nullable at the entity schema level so Hibernate can add this field to older
+    // databases safely; the manual migration backfills existing rows before enforcing NOT NULL.
+    @Column(name = "percentual_adiantamento", precision = 5, scale = 2)
     private BigDecimal percentualAdiantamento = new BigDecimal("70.00");
 
 

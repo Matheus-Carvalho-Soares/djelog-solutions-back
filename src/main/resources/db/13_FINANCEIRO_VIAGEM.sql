@@ -1,7 +1,15 @@
 -- Commission override and editable advance split. Existing commission percentages are preserved.
 ALTER TABLE viagem
     ADD COLUMN IF NOT EXISTS valor_comissao_manual NUMERIC(12, 2),
-    ADD COLUMN IF NOT EXISTS percentual_adiantamento NUMERIC(5, 2) NOT NULL DEFAULT 70.00;
+    ADD COLUMN IF NOT EXISTS percentual_adiantamento NUMERIC(5, 2);
+
+UPDATE viagem
+SET percentual_adiantamento = 70.00
+WHERE percentual_adiantamento IS NULL;
+
+ALTER TABLE viagem
+    ALTER COLUMN percentual_adiantamento SET DEFAULT 70.00,
+    ALTER COLUMN percentual_adiantamento SET NOT NULL;
 
 -- Expenses may belong to a trip, to a truck, or only to the user.
 ALTER TABLE despesas ALTER COLUMN id_viagem DROP NOT NULL;
