@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -76,6 +77,21 @@ class VeiculoServiceTest {
         request.setProprietario(professionalRef(ownerId));
 
         assertThrows(AccessDeniedException.class, () -> service.create(request, usuarioId));
+    }
+
+    @Test
+    void rejectsConvertingTruckWithLinkedTrailerIntoTrailer() {
+        UUID truckId = UUID.randomUUID();
+        Veiculo truck = new Veiculo();
+        truck.setId(truckId);
+        truck.setTipo("CAMINHAO");
+        when(veiculoRepository.findByIdAndUsuarioId(truckId, usuarioId)).thenReturn(Optional.of(truck));
+        when(veiculoRepository.existsByCaminhao_Id(eq(truckId))).thenReturn(true);
+
+        VeiculoDTO request = new VeiculoDTO();
+        request.setTipo("CARRETA");
+
+        assertThrows(IllegalArgumentException.class, () -> service.update(truckId, request, usuarioId));
     }
 
     private Profissional professional(UUID id) {

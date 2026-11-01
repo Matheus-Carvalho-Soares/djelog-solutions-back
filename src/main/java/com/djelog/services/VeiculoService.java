@@ -65,6 +65,10 @@ public class VeiculoService {
         if (!List.of(CAMINHAO, CARRETA).contains(tipo)) {
             throw new IllegalArgumentException("Tipo de veiculo invalido.");
         }
+        if (CARRETA.equals(tipo) && veiculo.getId() != null
+                && veiculoRepository.existsByCaminhao_Id(veiculo.getId())) {
+            throw new IllegalArgumentException("Um caminhao com carreta vinculada nao pode ser convertido em carreta.");
+        }
 
         Profissional motorista = resolveProfissional(dto.getProfissional(), usuarioId, tipo.equals(CAMINHAO));
         Profissional proprietario = resolveProfissional(dto.getProprietario(), usuarioId, false);
