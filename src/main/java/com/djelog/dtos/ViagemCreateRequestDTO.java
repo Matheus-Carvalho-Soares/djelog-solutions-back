@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /** Input contract for creating a trip and its initial freight receipt. */
 public class ViagemCreateRequestDTO {
@@ -38,11 +39,10 @@ public class ViagemCreateRequestDTO {
     @DecimalMin(value = "0.00") @Digits(integer = 10, fraction = 2)
     private BigDecimal valorComissaoManual;
 
-    @NotBlank @Pattern(regexp = "A_VISTA|ADIANTAMENTO")
-    private String formaPagamentoFrete;
+    @Pattern(regexp = "A_VISTA|ADIANTAMENTO")
+    private String formaPagamentoFrete = "ADIANTAMENTO";
     @DecimalMin(value = "0.00") @Digits(integer = 10, fraction = 2)
     private BigDecimal valorAdiantamento;
-    @NotNull
     private LocalDate dataRecebimentoInicial;
 
     @NotNull
@@ -53,10 +53,16 @@ public class ViagemCreateRequestDTO {
 
     public UUID getProfissionalId() { return profissionalId; }
     public void setProfissionalId(UUID profissionalId) { this.profissionalId = profissionalId; }
+    @JsonProperty("profissional")
+    public void setProfissional(ProfissionalDTO profissional) { if (profissional != null) this.profissionalId = profissional.getId(); }
     public UUID getEmpresaId() { return empresaId; }
     public void setEmpresaId(UUID empresaId) { this.empresaId = empresaId; }
+    @JsonProperty("empresa")
+    public void setEmpresa(ProfissionalDTO empresa) { if (empresa != null) this.empresaId = empresa.getId(); }
     public UUID getVeiculoId() { return veiculoId; }
     public void setVeiculoId(UUID veiculoId) { this.veiculoId = veiculoId; }
+    @JsonProperty("veiculo")
+    public void setVeiculo(ProfissionalDTO veiculo) { if (veiculo != null) this.veiculoId = veiculo.getId(); }
     public String getInicioFrete() { return inicioFrete; }
     public void setInicioFrete(String inicioFrete) { this.inicioFrete = inicioFrete; }
     public String getFimFrete() { return fimFrete; }

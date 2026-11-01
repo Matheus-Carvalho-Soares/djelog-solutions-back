@@ -3,6 +3,7 @@ package com.djelog.entities;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
@@ -37,6 +38,12 @@ public class Despesa {
     @Column(length = 40)
     private String categoria;
 
+    @Column(name = "data_despesa")
+    private LocalDate dataDespesa;
+
+    @Column(length = 150)
+    private String recebedor;
+
     @OneToMany(mappedBy = "despesa", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("dataVencimento asc, numeroParcela asc")
     private java.util.List<ParcelaDespesa> parcelas = new java.util.ArrayList<>();
@@ -66,6 +73,10 @@ public class Despesa {
     public void setVeiculo(Veiculo veiculo) { this.veiculo = veiculo; }
     public String getCategoria() { return categoria; }
     public void setCategoria(String categoria) { this.categoria = categoria; }
+    public LocalDate getDataDespesa() { return dataDespesa; }
+    public void setDataDespesa(LocalDate dataDespesa) { this.dataDespesa = dataDespesa; }
+    public String getRecebedor() { return recebedor; }
+    public void setRecebedor(String recebedor) { this.recebedor = recebedor; }
     public java.util.List<ParcelaDespesa> getParcelas() { return parcelas; }
     public void setParcelas(java.util.List<ParcelaDespesa> parcelas) {
         this.parcelas.clear();

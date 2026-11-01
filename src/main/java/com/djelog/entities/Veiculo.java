@@ -19,10 +19,16 @@ public class Veiculo {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
-    @NotBlank(message = "Informe a marca do veiculo.")
+    @Column(length = 80)
     @Size(max = 80, message = "Marca deve ter no maximo 80 caracteres.")
     private String marca;
+
+    @Column(name = "tipo", nullable = false, length = 20)
+    private String tipo = "CAMINHAO";
+
+    @Column(name = "modelo", length = 80)
+    @Size(max = 80, message = "Modelo deve ter no maximo 80 caracteres.")
+    private String modelo;
 
     @Min(value = 1900, message = "Ano deve ser maior ou igual a 1900.")
     @Max(value = 2100, message = "Ano deve ser menor ou igual a 2100.")
@@ -45,6 +51,16 @@ public class Veiculo {
     @JoinColumn(name = "id_profissional", referencedColumnName = "id", foreignKey = @ForeignKey(name = "fk_veiculo_profissional"))
     private Profissional profissional;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_profissional_proprietario", referencedColumnName = "id",
+            foreignKey = @ForeignKey(name = "fk_veiculo_proprietario"))
+    private Profissional proprietario;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_caminhao", referencedColumnName = "id", unique = true,
+            foreignKey = @ForeignKey(name = "fk_veiculo_caminhao"))
+    private Veiculo caminhao;
+
     private Boolean status;
 
     public Veiculo() {
@@ -66,6 +82,11 @@ public class Veiculo {
         this.marca = marca;
     }
 
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
+    public String getModelo() { return modelo; }
+    public void setModelo(String modelo) { this.modelo = modelo; }
+
     public Integer getAno() {
         return ano;
     }
@@ -81,6 +102,11 @@ public class Veiculo {
     public void setProfissional(Profissional profissional) {
         this.profissional = profissional;
     }
+
+    public Profissional getProprietario() { return proprietario; }
+    public void setProprietario(Profissional proprietario) { this.proprietario = proprietario; }
+    public Veiculo getCaminhao() { return caminhao; }
+    public void setCaminhao(Veiculo caminhao) { this.caminhao = caminhao; }
 
     public Boolean getStatus() {
         return status;

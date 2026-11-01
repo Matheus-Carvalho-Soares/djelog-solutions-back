@@ -9,10 +9,13 @@ import com.djelog.repositories.DespesaRepository;
 import com.djelog.repositories.EmpresaRepository;
 import com.djelog.repositories.EstadiaRepository;
 import com.djelog.repositories.ProfissionalRepository;
+import com.djelog.repositories.RecebimentoFreteRepository;
 import com.djelog.repositories.UsuarioRepository;
 import com.djelog.repositories.VeiculoRepository;
 import com.djelog.repositories.ViagemRepository;
 import com.djelog.services.JwtService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +30,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -67,6 +71,9 @@ class FriendlyErrorsIntegrationTests {
     private ViagemRepository viagemRepository;
 
     @Autowired
+    private RecebimentoFreteRepository recebimentoFreteRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -75,10 +82,14 @@ class FriendlyErrorsIntegrationTests {
     @Autowired
     private UserDetailsService userDetailsService;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @BeforeEach
     void cleanDatabase() {
         despesaRepository.deleteAll();
         estadiaRepository.deleteAll();
+        recebimentoFreteRepository.deleteAll();
         viagemRepository.deleteAll();
         veiculoRepository.deleteAll();
         empresaRepository.deleteAll();
@@ -353,6 +364,101 @@ class FriendlyErrorsIntegrationTests {
                 .andExpect(jsonPath("$.profissional.nome").value("Motorista Teste"))
                 .andExpect(jsonPath("$.empresa.nome").value("Empresa Teste"))
                 .andExpect(jsonPath("$.veiculo.placa").value("ABC1234"));
+    }
+
+    @Test
+    void fleetRelationsAndOwnerCommissionAreScopedAndPreserveExistingCommission() throws Exception {
+        Usuario usuario = createUser("fleet-rules@example.com", "SenhaAtual123");
+        Profissional proprietario = createProfissional(usuario);
+        Profissional motorista = new Profissional();
+        motorista.setNome("Motorista Contratado");
+        motorista.setTelefone("11988887777");
+        motorista.setStatus(true);
+        motorista.setUsuario(usuario);
+        motorista = profissionalRepository.save(motorista);
+        Usuario outroUsuario = createUser("other-fleet@example.com", "SenhaAtual123");
+        Profissional motoristaOutro = createProfissional(outroUsuario);
+        Veiculo caminhaoOutro = createVeiculo(motoristaOutro);
+        String token = bearerToken(usuario);
+
+        String truckResponse = mockMvc.perform(post("/api/veiculo")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tipo":"CAMINHAO","marca":"Volvo","placa":"AAA1111","status":true,
+                                 "profissional":{"id":"%s"},"proprietario":{"id":"%s"}}
+                                """.formatted(proprietario.getId(), proprietario.getId())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tipo").value("CAMINHAO"))
+                .andExpect(jsonPath("$.proprietario.id").value(proprietario.getId().toString()))
+                .andReturn().getResponse().getContentAsString();
+        UUID caminhaoId = UUID.fromString(objectMapper.readTree(truckResponse).get("id").asText());
+
+        String trailerResponse = mockMvc.perform(post("/api/veiculo")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tipo":"CARRETA","modelo":"Randon Graneleira","ano":2022,"placa":"BBB2222","status":true,
+                                 "caminhaoId":"%s","proprietario":{"id":"%s"}}
+                                """.formatted(caminhaoId, proprietario.getId())))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tipo").value("CARRETA"))
+                .andExpect(jsonPath("$.modelo").value("Randon Graneleira"))
+                .andExpect(jsonPath("$.caminhaoId").value(caminhaoId.toString()))
+                .andReturn().getResponse().getContentAsString();
+        UUID carretaId = UUID.fromString(objectMapper.readTree(trailerResponse).get("id").asText());
+
+        mockMvc.perform(post("/api/veiculo")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tipo":"CARRETA","modelo":"Carreta de terceiro","ano":2021,"placa":"CCC3333","status":true,
+                                 "caminhaoId":"%s","proprietario":{"id":"%s"}}
+                                """.formatted(caminhaoOutro.getId(), proprietario.getId())))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/api/viagem")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(tripRequest(proprietario.getId(), carretaId, "150.00")))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/api/viagem")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(tripRequest(proprietario.getId(), caminhaoId, "150.00")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.valorComissao").value(0))
+                .andExpect(jsonPath("$.valorComissaoManual").value(0));
+
+        String historicalResponse = mockMvc.perform(post("/api/viagem")
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(tripRequest(motorista.getId(), caminhaoId, "150.00")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.valorComissao").value(150))
+                .andReturn().getResponse().getContentAsString();
+        UUID historicalTripId = UUID.fromString(objectMapper.readTree(historicalResponse).get("id").asText());
+
+        mockMvc.perform(put("/api/viagem/{id}", historicalTripId)
+                        .header("Authorization", token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"inicioFrete":"Origem revisada","fimFrete":"Destino","valorFrete":1000.00,
+                                 "comissao":15.00,"valorComissaoManual":150.00,"dataInicio":"2026-10-31T10:00:00",
+                                 "status":"EM_ANDAMENTO","profissional":{"id":"%s"},"veiculo":{"id":"%s"}}
+                                """.formatted(motorista.getId(), caminhaoId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.valorComissao").value(150));
+    }
+
+    private String tripRequest(java.util.UUID profissionalId, java.util.UUID veiculoId, String manualCommission) {
+        return """
+                {"profissionalId":"%s","veiculoId":"%s","inicioFrete":"Origem","fimFrete":"Destino",
+                 "valorFrete":1000.00,"comissao":15.00,"valorComissaoManual":%s,"formaPagamentoFrete":"ADIANTAMENTO",
+                 "valorAdiantamento":100.00,"dataRecebimentoInicial":"2026-11-01","dataInicio":"2026-10-30T10:00:00",
+                 "status":"EM_ANDAMENTO"}
+                """.formatted(profissionalId, veiculoId, manualCommission);
     }
 
     private Usuario createUser(String email, String password) {

@@ -16,10 +16,10 @@ import java.util.UUID;
 
 @Repository
 public interface ViagemRepository extends JpaRepository<Viagem, UUID> {
-    @EntityGraph(attributePaths = {"profissional", "empresa", "veiculo"})
+    @EntityGraph(attributePaths = {"profissional", "empresa", "veiculo", "veiculo.profissional", "veiculo.proprietario", "veiculo.caminhao"})
     List<Viagem> findByProfissional_Usuario_Id(UUID usuarioId);
 
-    @EntityGraph(attributePaths = {"profissional", "empresa", "veiculo"})
+    @EntityGraph(attributePaths = {"profissional", "empresa", "veiculo", "veiculo.profissional", "veiculo.proprietario", "veiculo.caminhao"})
     Optional<Viagem> findByIdAndProfissional_Usuario_Id(UUID id, UUID usuarioId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

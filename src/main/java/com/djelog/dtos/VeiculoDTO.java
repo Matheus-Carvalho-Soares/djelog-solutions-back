@@ -1,11 +1,9 @@
 package com.djelog.dtos;
 
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -15,9 +13,13 @@ import java.util.UUID;
 public class VeiculoDTO {
     private UUID id;
 
-    @NotBlank(message = "Informe a marca do veiculo.")
     @Size(max = 80, message = "Marca deve ter no maximo 80 caracteres.")
     private String marca;
+
+    private String tipo = "CAMINHAO";
+    @Size(max = 80, message = "Modelo deve ter no maximo 80 caracteres.")
+    private String modelo;
+    private UUID caminhaoId;
 
     @Min(value = 1900, message = "Ano deve ser maior ou igual a 1900.")
     @Max(value = 2100, message = "Ano deve ser menor ou igual a 2100.")
@@ -33,9 +35,8 @@ public class VeiculoDTO {
     @DecimalMin(value = "0.0", inclusive = false, message = "Peso deve ser maior que zero.")
     private BigDecimal qtdPeso;
 
-    @Valid
-    @NotNull(message = "Selecione um motorista para o veiculo.")
     private ProfissionalDTO profissional;
+    private ProfissionalDTO proprietario;
     private Boolean status;
 
     public VeiculoDTO() {
@@ -56,6 +57,13 @@ public class VeiculoDTO {
     public void setMarca(String marca) {
         this.marca = marca;
     }
+
+    public String getTipo() { return tipo; }
+    public void setTipo(String tipo) { this.tipo = tipo; }
+    public String getModelo() { return modelo; }
+    public void setModelo(String modelo) { this.modelo = modelo; }
+    public UUID getCaminhaoId() { return caminhaoId; }
+    public void setCaminhaoId(UUID caminhaoId) { this.caminhaoId = caminhaoId; }
 
     public Integer getAno() {
         return ano;
@@ -96,6 +104,9 @@ public class VeiculoDTO {
     public void setProfissional(ProfissionalDTO profissional) {
         this.profissional = profissional;
     }
+
+    public ProfissionalDTO getProprietario() { return proprietario; }
+    public void setProprietario(ProfissionalDTO proprietario) { this.proprietario = proprietario; }
 
     public Boolean getStatus() {
         return status;

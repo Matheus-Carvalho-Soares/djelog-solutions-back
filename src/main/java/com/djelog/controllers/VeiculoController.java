@@ -1,7 +1,6 @@
 package com.djelog.controllers;
 
 import com.djelog.dtos.VeiculoDTO;
-import com.djelog.entities.Veiculo;
 import com.djelog.services.CurrentUserService;
 import com.djelog.services.VeiculoService;
 import jakarta.validation.Valid;
@@ -45,13 +44,13 @@ public class VeiculoController {
     }
 
     @PostMapping
-    public ResponseEntity<VeiculoDTO> create(@Valid @RequestBody Veiculo veiculo) {
+    public ResponseEntity<VeiculoDTO> create(@Valid @RequestBody VeiculoDTO veiculo) {
         VeiculoDTO created = veiculoService.create(veiculo, currentUserService.getCurrentUserId());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<VeiculoDTO> update(@PathVariable("id") UUID id, @Valid @RequestBody Veiculo veiculo) {
+    public ResponseEntity<VeiculoDTO> update(@PathVariable("id") UUID id, @Valid @RequestBody VeiculoDTO veiculo) {
         return veiculoService.update(id, veiculo, currentUserService.getCurrentUserId())
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

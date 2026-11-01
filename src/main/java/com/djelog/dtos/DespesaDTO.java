@@ -29,6 +29,9 @@ public class DespesaDTO {
     private BigDecimal valor;
 
     private String categoria;
+    private LocalDate dataDespesa;
+    @Size(max = 150, message = "Recebedor deve ter no maximo 150 caracteres.")
+    private String recebedor;
     private List<ParcelaDespesaDTO> parcelas;
     private LocalDate dataVencimento;
     private String statusPagamento;
@@ -82,6 +85,10 @@ public class DespesaDTO {
 
     public String getCategoria() { return categoria; }
     public void setCategoria(String categoria) { this.categoria = categoria; }
+    public LocalDate getDataDespesa() { return dataDespesa; }
+    public void setDataDespesa(LocalDate dataDespesa) { this.dataDespesa = dataDespesa; }
+    public String getRecebedor() { return recebedor; }
+    public void setRecebedor(String recebedor) { this.recebedor = recebedor; }
     public List<ParcelaDespesaDTO> getParcelas() { return parcelas; }
     public void setParcelas(List<ParcelaDespesaDTO> parcelas) { this.parcelas = parcelas; }
     public LocalDate getDataVencimento() { return dataVencimento; }

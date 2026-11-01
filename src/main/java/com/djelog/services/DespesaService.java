@@ -86,7 +86,7 @@ public class DespesaService {
         }
         Veiculo veiculo = null;
         if (dto.getVeiculo() != null && dto.getVeiculo().getId() != null) {
-            veiculo = veiculoRepository.findByIdAndProfissional_Usuario_Id(dto.getVeiculo().getId(), usuarioId)
+            veiculo = veiculoRepository.findByIdAndUsuarioId(dto.getVeiculo().getId(), usuarioId)
                     .orElseThrow(() -> new AccessDeniedException("Veiculo nao encontrado para este usuario."));
         }
         if (viagem != null) {
@@ -102,6 +102,11 @@ public class DespesaService {
         despesa.setDescricao(dto.getDescricao());
         despesa.setValor(dto.getValor());
         despesa.setCategoria(normalizeCategory(dto.getCategoria(), dto.getNome()));
+        despesa.setDataDespesa(dto.getDataDespesa() != null ? dto.getDataDespesa()
+                : despesa.getId() == null && viagem != null && viagem.getDataInicio() != null
+                ? viagem.getDataInicio().toLocalDate() : null);
+        despesa.setRecebedor(dto.getRecebedor() == null || dto.getRecebedor().isBlank()
+                ? null : dto.getRecebedor().trim());
 
         List<ParcelaDespesaDTO> parcelDtos = dto.getParcelas();
         if (parcelDtos == null || parcelDtos.isEmpty()) {
@@ -111,7 +116,8 @@ public class DespesaService {
             ParcelaDespesaDTO single = new ParcelaDespesaDTO();
             single.setValor(dto.getValor());
             single.setDataVencimento(dueDate);
-            single.setStatusPagamento(dto.getStatusPagamento() == null ? "PENDENTE" : dto.getStatusPagamento());
+            single.setStatusPagamento(dto.getStatusPagamento() == null
+                    ? viagem == null ? "PENDENTE" : "PAGO" : dto.getStatusPagamento());
             single.setDataPagamento(dto.getDataPagamento());
             single.setNumeroParcela(1);
             parcelDtos = List.of(single);
@@ -125,14 +131,19 @@ public class DespesaService {
                 throw new IllegalArgumentException("O valor de cada parcela deve ser maior ou igual a zero.");
             }
             if (parcelDto.getDataVencimento() == null) throw new IllegalArgumentException("Informe o vencimento de cada parcela.");
-            String state = parcelDto.getStatusPagamento() == null ? "PENDENTE" : parcelDto.getStatusPagamento().toUpperCase();
+            String state = parcelDto.getStatusPagamento() == null
+                    ? dto.getStatusPagamento() != null ? dto.getStatusPagamento().toUpperCase()
+                    : viagem == null ? "PENDENTE" : "PAGO"
+                    : parcelDto.getStatusPagamento().toUpperCase();
             if (!List.of("PENDENTE", "PAGO", "NAO_INFORMADO").contains(state)) throw new IllegalArgumentException("Situacao de pagamento invalida.");
-            if ("PAGO".equals(state) && parcelDto.getDataPagamento() == null) throw new IllegalArgumentException("Informe a data em que a parcela foi paga.");
+            LocalDate paymentDate = parcelDto.getDataPagamento() != null ? parcelDto.getDataPagamento()
+                    : dto.getDataPagamento() != null ? dto.getDataPagamento() : despesa.getDataDespesa();
+            if ("PAGO".equals(state) && paymentDate == null) throw new IllegalArgumentException("Informe a data em que a parcela foi paga.");
             ParcelaDespesa parcel = new ParcelaDespesa();
             parcel.setValor(parcelDto.getValor());
             parcel.setDataVencimento(parcelDto.getDataVencimento());
             parcel.setStatusPagamento(state);
-            parcel.setDataPagamento("PAGO".equals(state) ? parcelDto.getDataPagamento() : null);
+            parcel.setDataPagamento("PAGO".equals(state) ? paymentDate : null);
             parcel.setNumeroParcela(parcelDto.getNumeroParcela() == null ? index : parcelDto.getNumeroParcela());
             parcelas.add(parcel);
             totalParcelas = totalParcelas.add(parcel.getValor());
@@ -159,6 +170,8 @@ public class DespesaService {
         dto.setDescricao(despesa.getDescricao());
         dto.setValor(despesa.getValor());
         dto.setCategoria(despesa.getCategoria());
+        dto.setDataDespesa(despesa.getDataDespesa());
+        dto.setRecebedor(despesa.getRecebedor());
         if (!despesa.getParcelas().isEmpty()) {
             dto.setParcelas(despesa.getParcelas().stream().map(this::toDTO).toList());
             ParcelaDespesa first = despesa.getParcelas().get(0);
@@ -188,6 +201,9 @@ public class DespesaService {
             VeiculoDTO vehicle = new VeiculoDTO();
             vehicle.setId(despesa.getVeiculo().getId());
             vehicle.setMarca(despesa.getVeiculo().getMarca());
+            vehicle.setTipo(despesa.getVeiculo().getTipo());
+            vehicle.setModelo(despesa.getVeiculo().getModelo());
+            vehicle.setAno(despesa.getVeiculo().getAno());
             vehicle.setPlaca(despesa.getVeiculo().getPlaca());
             vehicle.setNome(despesa.getVeiculo().getNome());
             dto.setVeiculo(vehicle);
