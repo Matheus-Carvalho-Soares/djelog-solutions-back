@@ -86,8 +86,10 @@ public class ProfissionalFinanceiroService {
 
         List<MotoristaFinanceiroDTO.Semana> weeks = buildWeeks(viagens, pagoPorViagem, profissionalId,
                 usuarioId, weekStart(hoje).minusWeeks(11), weekStart(hoje), veiculoId);
-        List<PagamentoMotorista> paymentsInPeriod = pagamentoRepository.findDetailsByPeriod(
-                profissionalId, usuarioId, inicioPeriodo, fimPeriodo);
+        List<PagamentoMotorista> paymentsInPeriod = pagamentoRepository.findDetailsByProfessional(
+                        profissionalId, usuarioId).stream()
+                .filter(payment -> isPaymentInPeriod(payment.getDataPagamento(), inicioPeriodo, fimPeriodo))
+                .toList();
         List<MotoristaFinanceiroDTO.Pagamento> pagamentos = paymentsInPeriod.stream()
                 .map(payment -> toPaymentDto(payment, veiculoId)).filter(Objects::nonNull).toList();
         BigDecimal paidInPeriod = pagamentos.stream().map(MotoristaFinanceiroDTO.Pagamento::valor).reduce(ZERO, BigDecimal::add);
@@ -240,6 +242,10 @@ public class ProfissionalFinanceiroService {
     private boolean isCompleted(Viagem viagem) { return "CONCLUIDA".equalsIgnoreCase(viagem.getStatus()); }
     private boolean isActive(Viagem viagem) { return "EM_ANDAMENTO".equalsIgnoreCase(viagem.getStatus()); }
     private boolean isCancelled(Viagem viagem) { return "CANCELADA".equalsIgnoreCase(viagem.getStatus()); }
+    private boolean isPaymentInPeriod(LocalDate date, LocalDate inicio, LocalDate fim) {
+        return (inicio == null || (date != null && !date.isBefore(inicio)))
+                && (fim == null || (date != null && !date.isAfter(fim)));
+    }
     private LocalDate weekStart(LocalDate date) { return date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)); }
     private BigDecimal money(BigDecimal value) { return value == null ? ZERO : value.setScale(2, RoundingMode.HALF_UP); }
     private BigDecimal currency(BigDecimal value) {

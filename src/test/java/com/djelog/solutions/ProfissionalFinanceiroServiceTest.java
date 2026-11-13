@@ -72,8 +72,8 @@ class ProfissionalFinanceiroServiceTest {
         when(controleRepository.findByProfissional_IdAndUsuario_Id(profissionalId, usuarioId))
                 .thenReturn(Optional.of(legacy));
         when(itemRepository.sumByControleId(legacyId)).thenReturn(new BigDecimal("100.00"));
-        when(pagamentoRepository.findDetailsByPeriod(eq(profissionalId), eq(usuarioId),
-                isNull(), isNull())).thenReturn(List.of());
+        when(pagamentoRepository.findDetailsByProfessional(eq(profissionalId), eq(usuarioId)))
+                .thenReturn(List.of());
         lenient().when(pagamentoRepository.findDetailsByPeriod(eq(profissionalId), eq(usuarioId),
                 any(LocalDate.class), any(LocalDate.class))).thenReturn(List.of());
 
@@ -104,6 +104,8 @@ class ProfissionalFinanceiroServiceTest {
         when(viagemRepository.findFinanceiroTrips(eq(profissionalId), eq(usuarioId)))
                 .thenReturn(List.of(current, historical));
         when(itemRepository.sumByViagemIds(anyCollection())).thenReturn(List.of());
+        lenient().when(pagamentoRepository.findDetailsByProfessional(eq(profissionalId), eq(usuarioId)))
+                .thenReturn(List.of());
         lenient().when(pagamentoRepository.findDetailsByPeriod(eq(profissionalId), eq(usuarioId),
                 any(LocalDate.class), any(LocalDate.class))).thenReturn(List.of());
 
