@@ -58,7 +58,7 @@ public class ProfissionalFinanceiroService {
                 .orElseThrow(NoSuchElementException::new);
         // O filtro de período limita a lista da tela; o saldo disponível para
         // pagamento e os indicadores históricos continuam considerando todas as viagens.
-        List<Viagem> viagens = viagemRepository.findFinanceiroTrips(profissionalId, usuarioId, null, null);
+        List<Viagem> viagens = viagemRepository.findFinanceiroTrips(profissionalId, usuarioId);
         Map<UUID, BigDecimal> pagoPorViagem = new HashMap<>();
         if (!viagens.isEmpty()) {
             itemRepository.sumByViagemIds(viagens.stream().map(Viagem::getId).toList())

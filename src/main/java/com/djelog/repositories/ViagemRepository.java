@@ -23,13 +23,10 @@ public interface ViagemRepository extends JpaRepository<Viagem, UUID> {
             select v from Viagem v
             where v.profissional.id = :profissionalId
               and v.profissional.usuario.id = :usuarioId
-              and (:inicio is null or v.dataInicio >= :inicio)
-              and (:fim is null or v.dataInicio <= :fim)
             """)
     @EntityGraph(attributePaths = {"profissional", "veiculo"})
     List<Viagem> findFinanceiroTrips(@Param("profissionalId") UUID profissionalId,
-            @Param("usuarioId") UUID usuarioId, @Param("inicio") LocalDateTime inicio,
-            @Param("fim") LocalDateTime fim);
+            @Param("usuarioId") UUID usuarioId);
 
     @EntityGraph(attributePaths = {"profissional", "empresa", "veiculo", "veiculo.profissional", "veiculo.proprietario", "veiculo.caminhao"})
     Optional<Viagem> findByIdAndProfissional_Usuario_Id(UUID id, UUID usuarioId);

@@ -22,7 +22,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -63,8 +62,7 @@ class ProfissionalFinanceiroServiceTest {
         Viagem oldCompleted = trip(UUID.randomUUID(), LocalDate.now().minusYears(2), "CONCLUIDA", "1000.00");
         Viagem active = trip(UUID.randomUUID(), LocalDate.now(), "EM_ANDAMENTO", "800.00");
         Viagem cancelled = trip(UUID.randomUUID(), LocalDate.now().minusDays(3), "CANCELADA", "500.00");
-        when(viagemRepository.findFinanceiroTrips(
-                eq(profissionalId), eq(usuarioId), isNull(), isNull()))
+        when(viagemRepository.findFinanceiroTrips(eq(profissionalId), eq(usuarioId)))
                 .thenReturn(List.of(oldCompleted, active, cancelled));
         when(itemRepository.sumByViagemIds(anyCollection())).thenReturn(List.of());
         ControleFinanceiroMotorista legacy = mock(ControleFinanceiroMotorista.class);
@@ -94,7 +92,7 @@ class ProfissionalFinanceiroServiceTest {
                 .filter(row -> "CANCELADA".equals(row.status())).findFirst().orElseThrow();
         assertEquals(BigDecimal.ZERO.setScale(2), cancelledRow.comissao());
         assertEquals(BigDecimal.ZERO.setScale(2), cancelledRow.saldo());
-        verify(viagemRepository).findFinanceiroTrips(profissionalId, usuarioId, null, null);
+        verify(viagemRepository).findFinanceiroTrips(profissionalId, usuarioId);
     }
 
     @Test
@@ -103,10 +101,8 @@ class ProfissionalFinanceiroServiceTest {
         LocalDate periodStart = today.withDayOfMonth(1);
         Viagem current = trip(UUID.randomUUID(), today.minusDays(1), "CONCLUIDA", "1000.00");
         Viagem historical = trip(UUID.randomUUID(), today.minusYears(2), "CONCLUIDA", "1000.00");
-        lenient().when(viagemRepository.findFinanceiroTrips(eq(profissionalId), eq(usuarioId), isNull(), isNull()))
+        when(viagemRepository.findFinanceiroTrips(eq(profissionalId), eq(usuarioId)))
                 .thenReturn(List.of(current, historical));
-        lenient().when(viagemRepository.findFinanceiroTrips(eq(profissionalId), eq(usuarioId),
-                eq(periodStart.atStartOfDay()), any(LocalDateTime.class))).thenReturn(List.of(current));
         when(itemRepository.sumByViagemIds(anyCollection())).thenReturn(List.of());
         lenient().when(pagamentoRepository.findDetailsByPeriod(eq(profissionalId), eq(usuarioId),
                 any(LocalDate.class), any(LocalDate.class))).thenReturn(List.of());
@@ -117,7 +113,7 @@ class ProfissionalFinanceiroServiceTest {
         assertEquals(new BigDecimal("150.00"), result.resumo().comissaoLiberadaPeriodo());
         assertEquals(new BigDecimal("300.00"), result.resumo().saldoEmAberto(),
                 "the all-time amount available for payment must not shrink with the list filter");
-        verify(viagemRepository).findFinanceiroTrips(profissionalId, usuarioId, null, null);
+        verify(viagemRepository).findFinanceiroTrips(profissionalId, usuarioId);
     }
 
     @Test
