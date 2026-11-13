@@ -46,6 +46,7 @@ class ImportacaoViagemIntegrationTests {
     @Autowired VeiculoRepository veiculoRepository;
     @Autowired ViagemRepository viagemRepository;
     @Autowired DespesaRepository despesaRepository;
+    @Autowired RecebimentoFreteRepository recebimentoRepository;
     @Autowired ImportacaoViagemRepository importacaoRepository;
     @Autowired ImportacaoViagemLinhaRepository linhaRepository;
     @Autowired PasswordEncoder passwordEncoder;
@@ -57,6 +58,7 @@ class ImportacaoViagemIntegrationTests {
         linhaRepository.deleteAll();
         importacaoRepository.deleteAll();
         despesaRepository.deleteAll();
+        recebimentoRepository.deleteAll();
         viagemRepository.deleteAll();
         veiculoRepository.deleteAll();
         empresaRepository.deleteAll();

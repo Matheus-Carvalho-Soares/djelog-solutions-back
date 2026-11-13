@@ -48,8 +48,28 @@ public class RecebimentoFreteService {
         return toDTO(repository.save(entity));
     }
 
+    public RecebimentoFreteDTO update(UUID viagemId, UUID recebimentoId, RecebimentoFreteDTO dto, UUID usuarioId) {
+        Viagem viagem = viagemRepository.findByIdAndProfissional_Usuario_IdForUpdate(viagemId, usuarioId)
+                .orElseThrow(() -> new NoSuchElementException("Viagem nao encontrada para este usuario."));
+        RecebimentoFrete recebimento = repository.findByIdAndUsuarioId(recebimentoId, usuarioId)
+                .orElseThrow(NoSuchElementException::new);
+        if (!recebimento.getViagem().getId().equals(viagemId)) throw new NoSuchElementException();
+        if (dto.getValor() == null || dto.getValor().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("O valor recebido deve ser maior que zero.");
+        }
+        BigDecimal totalAtualizado = repository.sumByViagemId(viagemId).subtract(recebimento.getValor()).add(dto.getValor());
+        if (totalAtualizado.compareTo(viagem.getValorFrete()) > 0) {
+            throw new IllegalArgumentException("O total recebido nao pode ultrapassar o valor do frete. Ajuste o frete ou outros recebimentos primeiro.");
+        }
+        recebimento.setValor(dto.getValor());
+        recebimento.setDataRecebimento(dto.getDataRecebimento());
+        recebimento.setObservacao(dto.getObservacao());
+        return toDTO(repository.save(recebimento));
+    }
+
     public void delete(UUID viagemId, UUID recebimentoId, UUID usuarioId) {
-        ensureTrip(viagemId, usuarioId);
+        viagemRepository.findByIdAndProfissional_Usuario_IdForUpdate(viagemId, usuarioId)
+                .orElseThrow(() -> new NoSuchElementException("Viagem nao encontrada para este usuario."));
         RecebimentoFrete recebimento = repository.findByIdAndUsuarioId(recebimentoId, usuarioId)
                 .orElseThrow(NoSuchElementException::new);
         if (!recebimento.getViagem().getId().equals(viagemId)) throw new NoSuchElementException();

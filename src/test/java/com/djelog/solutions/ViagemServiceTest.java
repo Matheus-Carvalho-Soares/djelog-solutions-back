@@ -5,11 +5,13 @@ import com.djelog.entities.Profissional;
 import com.djelog.entities.Veiculo;
 import com.djelog.entities.Viagem;
 import com.djelog.repositories.EmpresaRepository;
+import com.djelog.repositories.DespesaRepository;
 import com.djelog.repositories.ProfissionalRepository;
 import com.djelog.repositories.RecebimentoFreteRepository;
 import com.djelog.repositories.VeiculoRepository;
 import com.djelog.repositories.ViagemRepository;
 import com.djelog.services.ViagemService;
+import com.djelog.exceptions.ConflictException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,8 +26,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class ViagemServiceTest {
@@ -34,6 +39,7 @@ class ViagemServiceTest {
     @Mock private ProfissionalRepository profissionalRepository;
     @Mock private VeiculoRepository veiculoRepository;
     @Mock private RecebimentoFreteRepository recebimentoRepository;
+    @Mock private DespesaRepository despesaRepository;
 
     private ViagemService service;
     private final UUID usuarioId = UUID.randomUUID();
@@ -41,7 +47,7 @@ class ViagemServiceTest {
     @BeforeEach
     void setUp() {
         service = new ViagemService(viagemRepository, empresaRepository, profissionalRepository,
-                veiculoRepository, recebimentoRepository);
+                veiculoRepository, recebimentoRepository, despesaRepository);
     }
 
     @Test
@@ -81,6 +87,35 @@ class ViagemServiceTest {
         when(veiculoRepository.findByIdAndUsuarioId(trailerId, usuarioId)).thenReturn(Optional.of(trailer));
 
         assertThrows(IllegalArgumentException.class, () -> service.create(request(professionalId, trailerId), usuarioId));
+    }
+
+    @Test
+    void blocksDeletingTripWithFinancialRecordsAndExplainsHowToKeepIt() {
+        UUID tripId = UUID.randomUUID();
+        Viagem trip = new Viagem();
+        trip.setId(tripId);
+        when(viagemRepository.findByIdAndProfissional_Usuario_IdForUpdate(tripId, usuarioId)).thenReturn(Optional.of(trip));
+        when(recebimentoRepository.existsByViagemId(tripId)).thenReturn(false);
+        when(despesaRepository.existsByViagemIdAndUsuarioId(tripId, usuarioId)).thenReturn(true);
+
+        ConflictException error = assertThrows(ConflictException.class, () -> service.delete(tripId, usuarioId));
+
+        assertTrue(error.getMessage().contains("mantenha a viagem como cancelada"));
+        verify(viagemRepository, never()).delete(any(Viagem.class));
+    }
+
+    @Test
+    void allowsDeletingTripWithoutFinancialRecords() {
+        UUID tripId = UUID.randomUUID();
+        Viagem trip = new Viagem();
+        trip.setId(tripId);
+        when(viagemRepository.findByIdAndProfissional_Usuario_IdForUpdate(tripId, usuarioId)).thenReturn(Optional.of(trip));
+        when(recebimentoRepository.existsByViagemId(tripId)).thenReturn(false);
+        when(despesaRepository.existsByViagemIdAndUsuarioId(tripId, usuarioId)).thenReturn(false);
+
+        service.delete(tripId, usuarioId);
+
+        verify(viagemRepository).delete(trip);
     }
 
     private ViagemCreateRequestDTO request(UUID professionalId, UUID vehicleId) {

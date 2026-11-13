@@ -17,6 +17,9 @@ public interface RecebimentoFreteRepository extends JpaRepository<RecebimentoFre
     @Query("select r from RecebimentoFrete r join fetch r.viagem v join fetch v.profissional p where r.id = :id and p.usuario.id = :usuarioId")
     Optional<RecebimentoFrete> findByIdAndUsuarioId(@Param("id") UUID id, @Param("usuarioId") UUID usuarioId);
 
+    @Query("select count(r) > 0 from RecebimentoFrete r where r.viagem.id = :viagemId")
+    boolean existsByViagemId(@Param("viagemId") UUID viagemId);
+
     @Query("select coalesce(sum(r.valor), 0) from RecebimentoFrete r where r.viagem.id = :viagemId")
     BigDecimal sumByViagemId(@Param("viagemId") UUID viagemId);
 

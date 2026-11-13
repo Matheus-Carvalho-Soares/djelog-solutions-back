@@ -34,6 +34,12 @@ public class RecebimentoFreteController {
                 .body(service.create(viagemId, dto, currentUserService.getCurrentUserId()));
     }
 
+    @PutMapping("/{recebimentoId}")
+    public ResponseEntity<RecebimentoFreteDTO> update(
+            @PathVariable UUID viagemId, @PathVariable UUID recebimentoId, @Valid @RequestBody RecebimentoFreteDTO dto) {
+        return ResponseEntity.ok(service.update(viagemId, recebimentoId, dto, currentUserService.getCurrentUserId()));
+    }
+
     @DeleteMapping("/{recebimentoId}")
     public ResponseEntity<Void> delete(@PathVariable UUID viagemId, @PathVariable UUID recebimentoId) {
         service.delete(viagemId, recebimentoId, currentUserService.getCurrentUserId());

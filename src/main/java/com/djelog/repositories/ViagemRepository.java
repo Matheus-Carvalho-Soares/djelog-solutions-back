@@ -19,6 +19,10 @@ public interface ViagemRepository extends JpaRepository<Viagem, UUID> {
     @EntityGraph(attributePaths = {"profissional", "empresa", "veiculo", "veiculo.profissional", "veiculo.proprietario", "veiculo.caminhao"})
     List<Viagem> findByProfissional_Usuario_Id(UUID usuarioId);
 
+    @EntityGraph(attributePaths = {"profissional", "veiculo"})
+    List<Viagem> findByProfissional_IdAndProfissional_Usuario_IdAndDataInicioBetween(
+            UUID profissionalId, UUID usuarioId, LocalDateTime inicio, LocalDateTime fim);
+
     @EntityGraph(attributePaths = {"profissional", "empresa", "veiculo", "veiculo.profissional", "veiculo.proprietario", "veiculo.caminhao"})
     Optional<Viagem> findByIdAndProfissional_Usuario_Id(UUID id, UUID usuarioId);
 
@@ -58,6 +62,7 @@ public interface ViagemRepository extends JpaRepository<Viagem, UUID> {
               and (:filtraProfissionais = false or p.id in :profissionalIds)
               and (:filtraEmpresas = false or e.id in :empresaIds)
               and (:filtraStatus = false or v.status in :status)
+              and upper(v.status) <> 'CANCELADA'
             order by v.dataInicio asc
             """)
     List<Viagem> findByPeriodoSobrepostoAndFiltros(

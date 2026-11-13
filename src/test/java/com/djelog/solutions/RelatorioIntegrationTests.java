@@ -11,6 +11,7 @@ import com.djelog.repositories.DespesaRepository;
 import com.djelog.repositories.EmpresaRepository;
 import com.djelog.repositories.EstadiaRepository;
 import com.djelog.repositories.ProfissionalRepository;
+import com.djelog.repositories.RecebimentoFreteRepository;
 import com.djelog.repositories.UsuarioRepository;
 import com.djelog.repositories.VeiculoRepository;
 import com.djelog.repositories.ViagemRepository;
@@ -70,6 +71,9 @@ class RelatorioIntegrationTests {
     private ViagemRepository viagemRepository;
 
     @Autowired
+    private RecebimentoFreteRepository recebimentoRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -82,6 +86,7 @@ class RelatorioIntegrationTests {
     void cleanDatabase() {
         despesaRepository.deleteAll();
         estadiaRepository.deleteAll();
+        recebimentoRepository.deleteAll();
         viagemRepository.deleteAll();
         veiculoRepository.deleteAll();
         empresaRepository.deleteAll();
@@ -185,6 +190,28 @@ class RelatorioIntegrationTests {
                 .andExpect(jsonPath("$.totalPages").value(1))
                 .andExpect(jsonPath("$.items.length()").value(1))
                 .andExpect(jsonPath("$.items[0].viagemId").value(emAndamento.getId().toString()));
+    }
+
+    @Test
+    void excludesCancelledTripsFromUnfilteredFinancialReports() throws Exception {
+        Usuario usuario = createUser("relatorio-sem-cancelada@example.com");
+        Profissional profissional = createProfissional(usuario, "Motorista Financeiro");
+        Empresa empresa = createEmpresa(usuario);
+        Veiculo veiculo = createVeiculo(profissional, "CAN1234");
+        createViagemWithCosts(profissional, empresa, veiculo, 1000, 10, 50, 200);
+        Viagem cancelada = createViagemWithCosts(profissional, empresa, veiculo, 500, 20, 25, 50);
+        cancelada.setStatus("CANCELADA");
+        viagemRepository.save(cancelada);
+
+        mockMvc.perform(get("/api/viagem/excel/dados/por-veiculo")
+                        .header("Authorization", bearerToken(usuario))
+                        .param("dataInicio", "2026-07-01T00:00:00")
+                        .param("dataFim", "2026-07-31T23:59:59"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].quantidadeViagens").value(1))
+                .andExpect(jsonPath("$[0].receitaTotal").value(1000))
+                .andExpect(jsonPath("$[0].totalDespesas").value(50));
     }
 
     @Test

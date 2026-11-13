@@ -1,6 +1,7 @@
 package com.djelog.controllers;
 
 import com.djelog.dtos.DespesaDTO;
+import com.djelog.dtos.ConfirmacaoPagamentoLoteDTO;
 import com.djelog.services.CurrentUserService;
 import com.djelog.services.DespesaService;
 import jakarta.validation.Valid;
@@ -51,6 +52,11 @@ public class DespesaController {
     public ResponseEntity<DespesaDTO> update(@PathVariable UUID id, @Valid @RequestBody DespesaDTO despesaDTO) {
         DespesaDTO updatedDespesa = despesaService.update(id, despesaDTO, currentUserService.getCurrentUserId());
         return ResponseEntity.ok(updatedDespesa);
+    }
+
+    @PostMapping("/pagamentos/confirmar-lote")
+    public ResponseEntity<List<DespesaDTO>> confirmarPagamentosLote(@Valid @RequestBody ConfirmacaoPagamentoLoteDTO request) {
+        return ResponseEntity.ok(despesaService.confirmarPagamentosLote(request, currentUserService.getCurrentUserId()));
     }
 
     @DeleteMapping("/{id}")

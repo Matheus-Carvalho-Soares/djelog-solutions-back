@@ -1,6 +1,8 @@
 package com.djelog.services;
 
 import com.djelog.dtos.DespesaDTO;
+import com.djelog.dtos.ConfirmacaoPagamentoLoteDTO;
+import com.djelog.dtos.ItemPagamentoLoteDTO;
 import com.djelog.dtos.ParcelaDespesaDTO;
 import com.djelog.dtos.VeiculoDTO;
 import com.djelog.dtos.ViagemDTO;
@@ -23,6 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.LinkedHashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Map;
 
 @Service
 @Transactional
@@ -68,6 +74,43 @@ public class DespesaService {
         Despesa despesa = despesaRepository.findByIdAndUsuarioId(id, usuarioId).orElseThrow(NoSuchElementException::new);
         applyDTO(despesa, dto, usuarioId);
         return toDTO(despesaRepository.save(despesa));
+    }
+
+    public List<DespesaDTO> confirmarPagamentosLote(ConfirmacaoPagamentoLoteDTO request, UUID usuarioId) {
+        if (request == null || request.parcelas() == null || request.parcelas().isEmpty()) {
+            throw new IllegalArgumentException("Selecione ao menos uma parcela para confirmar.");
+        }
+        Set<UUID> installmentIds = new HashSet<>();
+        for (ItemPagamentoLoteDTO item : request.parcelas()) {
+            if (item == null || item.despesaId() == null || item.parcelaId() == null || item.dataPagamento() == null) {
+                throw new IllegalArgumentException("Informe a despesa, a parcela e a data de pagamento de cada item.");
+            }
+            if (!installmentIds.add(item.parcelaId())) throw new IllegalArgumentException("A mesma parcela foi selecionada mais de uma vez.");
+        }
+
+        Map<UUID, Despesa> expenses = new LinkedHashMap<>();
+        request.parcelas().stream().map(ItemPagamentoLoteDTO::despesaId).distinct().sorted().forEach(id ->
+                expenses.put(id, despesaRepository.findByIdAndUsuarioIdForUpdate(id, usuarioId)
+                        .orElseThrow(NoSuchElementException::new)));
+
+        Map<UUID, ParcelaDespesa> installments = new LinkedHashMap<>();
+        for (ItemPagamentoLoteDTO item : request.parcelas()) {
+            Despesa expense = expenses.get(item.despesaId());
+            ParcelaDespesa parcel = expense.getParcelas().stream()
+                    .filter(candidate -> item.parcelaId().equals(candidate.getId()))
+                    .findFirst().orElseThrow(() -> new IllegalArgumentException("Uma parcela não pertence à despesa informada."));
+            if (!"PENDENTE".equalsIgnoreCase(parcel.getStatusPagamento())) {
+                throw new IllegalArgumentException("Uma ou mais parcelas já foram atualizadas. Recarregue a revisão e tente novamente.");
+            }
+            installments.put(item.parcelaId(), parcel);
+        }
+
+        request.parcelas().forEach(item -> {
+            ParcelaDespesa parcel = installments.get(item.parcelaId());
+            parcel.setStatusPagamento("PAGO");
+            parcel.setDataPagamento(item.dataPagamento());
+        });
+        return expenses.values().stream().map(despesaRepository::save).map(this::toDTO).toList();
     }
 
     public void delete(UUID id, UUID usuarioId) {

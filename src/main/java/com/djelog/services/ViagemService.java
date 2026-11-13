@@ -15,11 +15,15 @@ import com.djelog.repositories.ProfissionalRepository;
 import com.djelog.repositories.VeiculoRepository;
 import com.djelog.repositories.ViagemRepository;
 import com.djelog.repositories.RecebimentoFreteRepository;
+import com.djelog.repositories.DespesaRepository;
+import com.djelog.repositories.PagamentoMotoristaItemRepository;
+import com.djelog.exceptions.ConflictException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.Locale;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,19 +43,33 @@ public class ViagemService {
     private final ProfissionalRepository profissionalRepository;
     private final VeiculoRepository veiculoRepository;
     private final RecebimentoFreteRepository recebimentoRepository;
+    private final DespesaRepository despesaRepository;
+    private final PagamentoMotoristaItemRepository pagamentoMotoristaItemRepository;
 
+    @Autowired
     public ViagemService(
             ViagemRepository viagemRepository,
             EmpresaRepository empresaRepository,
             ProfissionalRepository profissionalRepository,
             VeiculoRepository veiculoRepository,
-            RecebimentoFreteRepository recebimentoRepository
+            RecebimentoFreteRepository recebimentoRepository,
+            DespesaRepository despesaRepository,
+            PagamentoMotoristaItemRepository pagamentoMotoristaItemRepository
     ) {
         this.viagemRepository = viagemRepository;
         this.empresaRepository = empresaRepository;
         this.profissionalRepository = profissionalRepository;
         this.veiculoRepository = veiculoRepository;
         this.recebimentoRepository = recebimentoRepository;
+        this.despesaRepository = despesaRepository;
+        this.pagamentoMotoristaItemRepository = pagamentoMotoristaItemRepository;
+    }
+
+    public ViagemService(ViagemRepository viagemRepository, EmpresaRepository empresaRepository,
+            ProfissionalRepository profissionalRepository, VeiculoRepository veiculoRepository,
+            RecebimentoFreteRepository recebimentoRepository, DespesaRepository despesaRepository) {
+        this(viagemRepository, empresaRepository, profissionalRepository, veiculoRepository,
+                recebimentoRepository, despesaRepository, null);
     }
 
     @Transactional(readOnly = true)
@@ -131,12 +149,23 @@ public class ViagemService {
         viagem.setVeiculo(veiculo);
         enforceOwnerCommissionExemption(viagem);
 
-        return viagemRepository.findByIdAndProfissional_Usuario_Id(id, usuarioId)
+        return viagemRepository.findByIdAndProfissional_Usuario_IdForUpdate(id, usuarioId)
                 .map(existing -> {
                     applyFinancialDefaults(viagem, false);
                     BigDecimal totalRecebido = recebimentoRepository.sumByViagemId(existing.getId());
                     if (viagem.getValorFrete() == null || viagem.getValorFrete().compareTo(totalRecebido) < 0) {
                         throw new IllegalArgumentException("O frete nao pode ficar abaixo do valor ja recebido nesta viagem.");
+                    }
+                    BigDecimal comissaoPaga = pagoAoMotorista(existing.getId());
+                    if (comissaoPaga.signum() > 0) {
+                        if (valorComissao(viagem).compareTo(comissaoPaga) < 0)
+                            throw new IllegalArgumentException("A comissao nao pode ficar abaixo do valor ja pago ao motorista.");
+                        if (!existing.getProfissional().getId().equals(profissional.getId()))
+                            throw new IllegalArgumentException("Nao e possivel trocar o motorista depois de registrar pagamento de comissao.");
+                        if (!existing.getDataInicio().toLocalDate().equals(viagem.getDataInicio().toLocalDate()))
+                            throw new IllegalArgumentException("Nao e possivel alterar a data da viagem depois de registrar pagamento de comissao.");
+                        if ("CANCELADA".equalsIgnoreCase(viagem.getStatus()))
+                            throw new IllegalArgumentException("Nao e possivel cancelar uma viagem com comissao paga sem reconciliar o pagamento.");
                     }
                     existing.setProfissional(profissional);
                     existing.setEmpresa(empresa);
@@ -163,9 +192,26 @@ public class ViagemService {
     }
 
     public void delete(UUID id, UUID usuarioId) {
-        Viagem viagem = viagemRepository.findByIdAndProfissional_Usuario_Id(id, usuarioId)
+        Viagem viagem = viagemRepository.findByIdAndProfissional_Usuario_IdForUpdate(id, usuarioId)
                 .orElseThrow(NoSuchElementException::new);
+        if (recebimentoRepository.existsByViagemId(id) || despesaRepository.existsByViagemIdAndUsuarioId(id, usuarioId)) {
+            throw new ConflictException("Esta viagem possui recebimentos ou despesas vinculados. Remova os vínculos antes de excluir ou mantenha a viagem como cancelada.");
+        }
+        if (pagoAoMotorista(viagem.getId()).signum() > 0)
+            throw new ConflictException("Nao e possivel excluir uma viagem com pagamento de comissao vinculado.");
         viagemRepository.delete(viagem);
+    }
+
+    private BigDecimal pagoAoMotorista(UUID viagemId) {
+        return pagamentoMotoristaItemRepository == null ? BigDecimal.ZERO
+                : Optional.ofNullable(pagamentoMotoristaItemRepository.sumByViagemId(viagemId)).orElse(BigDecimal.ZERO);
+    }
+
+    private BigDecimal valorComissao(Viagem viagem) {
+        if (viagem.getValorComissaoManual() != null) return viagem.getValorComissaoManual();
+        BigDecimal percentual = viagem.getComissao() == null ? new BigDecimal("15.00") : viagem.getComissao();
+        BigDecimal frete = viagem.getValorFrete() == null ? BigDecimal.ZERO : viagem.getValorFrete();
+        return frete.multiply(percentual).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
     }
 
     private void setManagedRelationships(Viagem viagem, UUID usuarioId) {
