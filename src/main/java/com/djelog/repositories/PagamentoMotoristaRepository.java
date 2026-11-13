@@ -11,7 +11,8 @@ import java.util.UUID;
 public interface PagamentoMotoristaRepository extends JpaRepository<PagamentoMotorista, UUID> {
     @Query("select distinct p from PagamentoMotorista p left join fetch p.itens i left join fetch i.viagem v left join fetch v.veiculo " +
             "where p.profissional.id = :profissionalId and p.usuario.id = :usuarioId " +
-            "and p.dataPagamento between :inicio and :fim order by p.dataPagamento desc, p.criadoEm desc")
+            "and (:inicio is null or p.dataPagamento >= :inicio) " +
+            "and (:fim is null or p.dataPagamento <= :fim) order by p.dataPagamento desc, p.criadoEm desc")
     List<PagamentoMotorista> findDetailsByPeriod(@Param("profissionalId") UUID profissionalId,
             @Param("usuarioId") UUID usuarioId, @Param("inicio") LocalDate inicio, @Param("fim") LocalDate fim);
 }

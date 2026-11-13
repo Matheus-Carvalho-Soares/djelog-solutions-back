@@ -1,16 +1,14 @@
 package com.djelog.services;
 
-import com.djelog.dtos.ControleFinanceiroMotoristaRequest;
 import com.djelog.dtos.MotoristaFinanceiroDTO;
 import com.djelog.dtos.RegistrarPagamentoMotoristaRequest;
-import com.djelog.entities.ControleFinanceiroMotorista;
 import com.djelog.entities.PagamentoMotorista;
 import com.djelog.entities.PagamentoMotoristaItem;
 import com.djelog.entities.Profissional;
 import com.djelog.entities.Viagem;
-import com.djelog.repositories.ControleFinanceiroMotoristaRepository;
 import com.djelog.repositories.PagamentoMotoristaItemRepository;
 import com.djelog.repositories.PagamentoMotoristaRepository;
+import com.djelog.repositories.ControleFinanceiroMotoristaRepository;
 import com.djelog.repositories.ProfissionalRepository;
 import com.djelog.repositories.ViagemRepository;
 import org.springframework.stereotype.Service;
@@ -32,17 +30,18 @@ public class ProfissionalFinanceiroService {
     private static final Set<String> PAYMENT_METHODS = Set.of("PIX", "TRANSFERENCIA", "DINHEIRO", "OUTRO");
 
     private final ProfissionalRepository profissionalRepository;
-    private final ViagemRepository viagemRepository;
     private final ControleFinanceiroMotoristaRepository controleRepository;
+    private final ViagemRepository viagemRepository;
     private final PagamentoMotoristaRepository pagamentoRepository;
     private final PagamentoMotoristaItemRepository itemRepository;
 
     public ProfissionalFinanceiroService(ProfissionalRepository profissionalRepository,
-            ViagemRepository viagemRepository, ControleFinanceiroMotoristaRepository controleRepository,
-            PagamentoMotoristaRepository pagamentoRepository, PagamentoMotoristaItemRepository itemRepository) {
+            ControleFinanceiroMotoristaRepository controleRepository, ViagemRepository viagemRepository,
+            PagamentoMotoristaRepository pagamentoRepository,
+            PagamentoMotoristaItemRepository itemRepository) {
         this.profissionalRepository = profissionalRepository;
-        this.viagemRepository = viagemRepository;
         this.controleRepository = controleRepository;
+        this.viagemRepository = viagemRepository;
         this.pagamentoRepository = pagamentoRepository;
         this.itemRepository = itemRepository;
     }
@@ -51,39 +50,24 @@ public class ProfissionalFinanceiroService {
     public MotoristaFinanceiroDTO consultar(UUID profissionalId, UUID usuarioId,
             LocalDate inicio, LocalDate fim, UUID veiculoId) {
         LocalDate hoje = LocalDate.now();
-        LocalDate fimPeriodo = fim == null ? hoje : fim;
-        LocalDate inicioPeriodo = inicio == null ? fimPeriodo.minusWeeks(12) : inicio;
-        if (inicioPeriodo.isAfter(fimPeriodo)) throw new IllegalArgumentException("A data inicial deve ser anterior ou igual à data final.");
+        LocalDate fimPeriodo = fim;
+        LocalDate inicioPeriodo = inicio;
+        if (inicioPeriodo != null && fimPeriodo != null && inicioPeriodo.isAfter(fimPeriodo))
+            throw new IllegalArgumentException("A data inicial deve ser anterior ou igual à data final.");
         Profissional profissional = profissionalRepository.findByIdAndUsuario_Id(profissionalId, usuarioId)
                 .orElseThrow(NoSuchElementException::new);
-        Optional<ControleFinanceiroMotorista> maybeControle = controleRepository
-                .findByProfissional_IdAndUsuario_Id(profissionalId, usuarioId);
-        if (maybeControle.isEmpty()) {
-            return new MotoristaFinanceiroDTO(profissionalId, profissional.getNome(), false,
-                    null, ZERO, ZERO, ZERO, inicioPeriodo, fimPeriodo,
-                    List.of(),
-                    new MotoristaFinanceiroDTO.Resumo(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, 0),
-                    List.of(), List.of(), List.of());
-        }
-
-        ControleFinanceiroMotorista controle = maybeControle.get();
-        LocalDate dataBase = controle.getDataInicioControle();
-        LocalDate limiteConsulta = fimPeriodo.isAfter(hoje) ? fimPeriodo : hoje;
-        List<Viagem> viagens = viagemRepository.findByProfissional_IdAndProfissional_Usuario_IdAndDataInicioBetween(
-                profissionalId, usuarioId, dataBase.atStartOfDay(), limiteConsulta.plusDays(1).atStartOfDay().minusNanos(1));
+        // O filtro de período limita a lista da tela; o saldo disponível para
+        // pagamento e os indicadores históricos continuam considerando todas as viagens.
+        List<Viagem> viagens = viagemRepository.findFinanceiroTrips(profissionalId, usuarioId, null, null);
         Map<UUID, BigDecimal> pagoPorViagem = new HashMap<>();
         if (!viagens.isEmpty()) {
             itemRepository.sumByViagemIds(viagens.stream().map(Viagem::getId).toList())
                     .forEach(row -> pagoPorViagem.put((UUID) row[0], money((BigDecimal) row[1])));
         }
-        BigDecimal saldoInicialPago = money(itemRepository.sumByControleId(controle.getId()));
-        BigDecimal saldoInicialRestante = money(controle.getSaldoInicialPendente().subtract(saldoInicialPago).max(ZERO));
-
         List<Viagem> filtered = viagens.stream()
-                .filter(v -> !v.getDataInicio().toLocalDate().isBefore(inicioPeriodo)
-                        && !v.getDataInicio().toLocalDate().isAfter(fimPeriodo))
+                .filter(v -> inicioPeriodo == null || !v.getDataInicio().toLocalDate().isBefore(inicioPeriodo))
+                .filter(v -> fimPeriodo == null || !v.getDataInicio().toLocalDate().isAfter(fimPeriodo))
                 .filter(v -> veiculoId == null || (v.getVeiculo() != null && veiculoId.equals(v.getVeiculo().getId())))
-                .filter(v -> !isCancelled(v))
                 .sorted(Comparator.comparing(Viagem::getDataInicio).reversed()).toList();
 
         BigDecimal released = sumCommission(filtered, this::isCompleted);
@@ -95,11 +79,10 @@ public class ProfissionalFinanceiroService {
                 .filter(v -> veiculoId == null || (v.getVeiculo() != null && veiculoId.equals(v.getVeiculo().getId())))
                 .map(this::commission).reduce(ZERO, BigDecimal::add);
         BigDecimal weeklyAverage = weeklyAverage(viagens, weekStart(hoje), veiculoId);
-        BigDecimal openingBalanceInFilter = veiculoId == null ? saldoInicialRestante : ZERO;
         BigDecimal openBalance = viagens.stream().filter(this::isCompleted).filter(v -> !isCancelled(v))
                 .filter(v -> veiculoId == null || (v.getVeiculo() != null && veiculoId.equals(v.getVeiculo().getId())))
                 .map(v -> commission(v).subtract(pagoPorViagem.getOrDefault(v.getId(), ZERO)).max(ZERO))
-                .reduce(openingBalanceInFilter, BigDecimal::add);
+                .reduce(ZERO, BigDecimal::add);
 
         List<MotoristaFinanceiroDTO.Semana> weeks = buildWeeks(viagens, pagoPorViagem, profissionalId,
                 usuarioId, weekStart(hoje).minusWeeks(11), weekStart(hoje), veiculoId);
@@ -108,6 +91,10 @@ public class ProfissionalFinanceiroService {
         List<MotoristaFinanceiroDTO.Pagamento> pagamentos = paymentsInPeriod.stream()
                 .map(payment -> toPaymentDto(payment, veiculoId)).filter(Objects::nonNull).toList();
         BigDecimal paidInPeriod = pagamentos.stream().map(MotoristaFinanceiroDTO.Pagamento::valor).reduce(ZERO, BigDecimal::add);
+        BigDecimal legacyOpen = controleRepository.findByProfissional_IdAndUsuario_Id(profissionalId, usuarioId)
+                .map(control -> money(control.getSaldoInicialPendente())
+                        .subtract(money(itemRepository.sumByControleId(control.getId()))).max(ZERO))
+                .orElse(ZERO);
         List<MotoristaFinanceiroDTO.Viagem> tripRows = filtered.stream().map(v -> toTripDto(v,
                 pagoPorViagem.getOrDefault(v.getId(), ZERO))).toList();
         List<MotoristaFinanceiroDTO.VeiculoFiltro> vehicleOptions = viagens.stream().map(Viagem::getVeiculo)
@@ -117,30 +104,11 @@ public class ProfissionalFinanceiroService {
                                 Optional.ofNullable(v.getModelo()).orElse(Optional.ofNullable(v.getMarca()).orElse(""))))
                 .sorted(Comparator.comparing(MotoristaFinanceiroDTO.VeiculoFiltro::nome)).toList();
 
-        return new MotoristaFinanceiroDTO(profissionalId, profissional.getNome(), true, dataBase,
-                money(controle.getSaldoInicialPendente()), saldoInicialPago, saldoInicialRestante,
+        return new MotoristaFinanceiroDTO(profissionalId, profissional.getNome(),
                 inicioPeriodo, fimPeriodo, vehicleOptions,
                 new MotoristaFinanceiroDTO.Resumo(money(currentWeek), weeklyAverage, money(openBalance),
-                        money(paidInPeriod), money(released), money(projected), completedCount),
+                        money(paidInPeriod), money(released), money(projected), completedCount, money(legacyOpen)),
                 weeks, tripRows, pagamentos);
-    }
-
-    @Transactional
-    public void inicializar(UUID profissionalId, UUID usuarioId, ControleFinanceiroMotoristaRequest request) {
-        if (request.dataInicioControle().isAfter(LocalDate.now()))
-            throw new IllegalArgumentException("A data de início do controle não pode estar no futuro.");
-        if (currency(request.saldoInicialPendente()).signum() < 0)
-            throw new IllegalArgumentException("O saldo inicial não pode ser negativo.");
-        Profissional profissional = profissionalRepository.findByIdAndUsuario_Id(profissionalId, usuarioId)
-                .orElseThrow(NoSuchElementException::new);
-        if (controleRepository.findByProfissionalAndUsuarioForUpdate(profissionalId, usuarioId).isPresent())
-            throw new IllegalArgumentException("O controle financeiro deste motorista já foi inicializado.");
-        ControleFinanceiroMotorista controle = new ControleFinanceiroMotorista();
-        controle.setProfissional(profissional);
-        controle.setUsuario(profissional.getUsuario());
-        controle.setDataInicioControle(request.dataInicioControle());
-        controle.setSaldoInicialPendente(currency(request.saldoInicialPendente()));
-        controleRepository.save(controle);
     }
 
     @Transactional
@@ -153,16 +121,13 @@ public class ProfissionalFinanceiroService {
             throw new IllegalArgumentException("Selecione ao menos uma comissão para pagar.");
         Profissional profissional = profissionalRepository.findByIdAndUsuario_Id(profissionalId, usuarioId)
                 .orElseThrow(NoSuchElementException::new);
-        ControleFinanceiroMotorista controle = controleRepository.findByProfissionalAndUsuarioForUpdate(profissionalId, usuarioId)
-                .orElseThrow(() -> new IllegalArgumentException("Inicialize o controle financeiro antes de registrar pagamentos."));
         Set<UUID> tripIds = new HashSet<>();
         for (var allocation : request.alocacoes()) {
             if (currency(allocation.valor()).signum() <= 0)
                 throw new IllegalArgumentException("Cada valor alocado deve ser maior que zero.");
-            boolean opening = Boolean.TRUE.equals(allocation.saldoInicial());
-            if (opening == (allocation.viagemId() != null))
-                throw new IllegalArgumentException("Cada item deve apontar para uma viagem ou para o saldo inicial.");
-            if (allocation.viagemId() != null && !tripIds.add(allocation.viagemId()))
+            if (allocation.viagemId() == null)
+                throw new IllegalArgumentException("Cada item deve apontar para uma viagem.");
+            if (!tripIds.add(allocation.viagemId()))
                 throw new IllegalArgumentException("Uma viagem não pode aparecer mais de uma vez no mesmo pagamento.");
         }
 
@@ -170,28 +135,17 @@ public class ProfissionalFinanceiroService {
                 .findByIdAndProfissional_Usuario_IdForUpdate(id, usuarioId).orElseThrow(NoSuchElementException::new)).toList();
         Map<UUID, Viagem> tripById = lockedTrips.stream().collect(Collectors.toMap(Viagem::getId, Function.identity()));
         BigDecimal total = ZERO;
-        BigDecimal openingAmount = ZERO;
         for (var allocation : request.alocacoes()) {
             BigDecimal amount = currency(allocation.valor());
             total = total.add(amount);
-            if (Boolean.TRUE.equals(allocation.saldoInicial())) {
-                openingAmount = openingAmount.add(amount);
-                continue;
-            }
             Viagem viagem = tripById.get(allocation.viagemId());
             if (viagem == null || !profissionalId.equals(viagem.getProfissional().getId()))
                 throw new IllegalArgumentException("A viagem informada não pertence a este motorista.");
-            if (!isCompleted(viagem)) throw new IllegalArgumentException("Só viagens concluídas e não canceladas liberam comissão para pagamento.");
-            if (viagem.getDataInicio().toLocalDate().isBefore(controle.getDataInicioControle()))
-                throw new IllegalArgumentException("A viagem é anterior ao início do controle; use o saldo inicial conciliado.");
+            if (!isCompleted(viagem) || isCancelled(viagem))
+                throw new IllegalArgumentException("Só viagens concluídas e não canceladas liberam comissão para pagamento.");
             BigDecimal alreadyPaid = itemRepository.sumByViagemId(viagem.getId());
             if (alreadyPaid.add(amount).compareTo(commission(viagem)) > 0)
                 throw new IllegalArgumentException("O valor informado excede o saldo de comissão desta viagem.");
-        }
-        if (openingAmount.signum() > 0) {
-            BigDecimal openingPaid = itemRepository.sumByControleId(controle.getId());
-            if (openingPaid.add(openingAmount).compareTo(controle.getSaldoInicialPendente()) > 0)
-                throw new IllegalArgumentException("O valor informado excede o saldo inicial ainda em aberto.");
         }
         PagamentoMotorista pagamento = new PagamentoMotorista();
         pagamento.setProfissional(profissional);
@@ -204,8 +158,7 @@ public class ProfissionalFinanceiroService {
         for (var allocation : request.alocacoes()) {
             PagamentoMotoristaItem item = new PagamentoMotoristaItem();
             item.setValor(currency(allocation.valor()));
-            if (Boolean.TRUE.equals(allocation.saldoInicial())) item.setControle(controle);
-            else item.setViagem(tripById.get(allocation.viagemId()));
+            item.setViagem(tripById.get(allocation.viagemId()));
             pagamento.addItem(item);
         }
         return pagamentoRepository.save(pagamento).getId();
@@ -249,7 +202,7 @@ public class ProfissionalFinanceiroService {
     }
 
     private MotoristaFinanceiroDTO.Viagem toTripDto(Viagem viagem, BigDecimal paid) {
-        BigDecimal commission = commission(viagem);
+        BigDecimal commission = isCancelled(viagem) ? ZERO : commission(viagem);
         boolean completed = isCompleted(viagem);
         String vehicle = viagem.getVeiculo() == null ? "—" :
                 (viagem.getVeiculo().getPlaca() == null ? "" : viagem.getVeiculo().getPlaca() + " · ") +

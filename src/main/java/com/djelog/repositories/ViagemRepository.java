@@ -19,9 +19,17 @@ public interface ViagemRepository extends JpaRepository<Viagem, UUID> {
     @EntityGraph(attributePaths = {"profissional", "empresa", "veiculo", "veiculo.profissional", "veiculo.proprietario", "veiculo.caminhao"})
     List<Viagem> findByProfissional_Usuario_Id(UUID usuarioId);
 
+    @Query("""
+            select v from Viagem v
+            where v.profissional.id = :profissionalId
+              and v.profissional.usuario.id = :usuarioId
+              and (:inicio is null or v.dataInicio >= :inicio)
+              and (:fim is null or v.dataInicio <= :fim)
+            """)
     @EntityGraph(attributePaths = {"profissional", "veiculo"})
-    List<Viagem> findByProfissional_IdAndProfissional_Usuario_IdAndDataInicioBetween(
-            UUID profissionalId, UUID usuarioId, LocalDateTime inicio, LocalDateTime fim);
+    List<Viagem> findFinanceiroTrips(@Param("profissionalId") UUID profissionalId,
+            @Param("usuarioId") UUID usuarioId, @Param("inicio") LocalDateTime inicio,
+            @Param("fim") LocalDateTime fim);
 
     @EntityGraph(attributePaths = {"profissional", "empresa", "veiculo", "veiculo.profissional", "veiculo.proprietario", "veiculo.caminhao"})
     Optional<Viagem> findByIdAndProfissional_Usuario_Id(UUID id, UUID usuarioId);

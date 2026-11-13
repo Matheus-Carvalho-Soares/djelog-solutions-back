@@ -16,5 +16,5 @@ public record RegistrarPagamentoMotoristaRequest(
         String observacao,
         @NotEmpty List<@Valid Alocacao> alocacoes
 ) {
-    public record Alocacao(UUID viagemId, Boolean saldoInicial, @NotNull BigDecimal valor) {}
+    public record Alocacao(@NotNull UUID viagemId, @NotNull BigDecimal valor) {}
 }

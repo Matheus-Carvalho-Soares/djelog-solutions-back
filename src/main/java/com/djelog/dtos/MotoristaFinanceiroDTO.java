@@ -8,11 +8,6 @@ import java.util.UUID;
 public record MotoristaFinanceiroDTO(
         UUID profissionalId,
         String nome,
-        boolean controleInicializado,
-        LocalDate dataInicioControle,
-        BigDecimal saldoInicial,
-        BigDecimal saldoInicialPago,
-        BigDecimal saldoInicialRestante,
         LocalDate inicioPeriodo,
         LocalDate fimPeriodo,
         List<VeiculoFiltro> veiculos,
@@ -24,7 +19,7 @@ public record MotoristaFinanceiroDTO(
     public record Resumo(BigDecimal comissaoSemanaAtual, BigDecimal mediaSemanal,
                          BigDecimal saldoEmAberto, BigDecimal pagoNoPeriodo,
                          BigDecimal comissaoLiberadaPeriodo, BigDecimal comissaoProjetadaPeriodo,
-                         int viagensConcluidas) {}
+                         int viagensConcluidas, BigDecimal saldoLegadoSemViagem) {}
     public record VeiculoFiltro(UUID id, String nome) {}
     public record Semana(LocalDate inicio, BigDecimal comissaoGerada, BigDecimal pago,
                          BigDecimal saldoAbertoAtual) {}

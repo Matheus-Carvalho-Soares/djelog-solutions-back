@@ -1,6 +1,5 @@
 package com.djelog.controllers;
 
-import com.djelog.dtos.ControleFinanceiroMotoristaRequest;
 import com.djelog.dtos.MotoristaFinanceiroDTO;
 import com.djelog.dtos.RegistrarPagamentoMotoristaRequest;
 import com.djelog.services.CurrentUserService;
@@ -15,7 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/profissional/{profissionalId}/financeiro")
+@RequestMapping("/api/profissional/{profissionalId}")
 public class ProfissionalFinanceiroController {
     private final ProfissionalFinanceiroService financeiroService;
     private final CurrentUserService currentUserService;
@@ -26,7 +25,7 @@ public class ProfissionalFinanceiroController {
         this.currentUserService = currentUserService;
     }
 
-    @GetMapping
+    @GetMapping("/financeiro")
     public ResponseEntity<MotoristaFinanceiroDTO> consultar(@PathVariable UUID profissionalId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inicio,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fim,
@@ -35,14 +34,7 @@ public class ProfissionalFinanceiroController {
                 currentUserService.getCurrentUserId(), inicio, fim, veiculoId));
     }
 
-    @PostMapping("/controle-inicial")
-    public ResponseEntity<Void> inicializar(@PathVariable UUID profissionalId,
-            @Valid @RequestBody ControleFinanceiroMotoristaRequest request) {
-        financeiroService.inicializar(profissionalId, currentUserService.getCurrentUserId(), request);
-        return ResponseEntity.noContent().build();
-    }
-
-    @PostMapping("/pagamentos")
+    @PostMapping({"/pagamentos", "/financeiro/pagamentos"})
     public ResponseEntity<Map<String, UUID>> registrarPagamento(@PathVariable UUID profissionalId,
             @Valid @RequestBody RegistrarPagamentoMotoristaRequest request) {
         UUID pagamentoId = financeiroService.registrarPagamento(profissionalId,
